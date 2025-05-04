@@ -7,19 +7,19 @@ Notifications.__index = Notifications
 function Notifications.new(screenGui)
     local self = setmetatable({}, Notifications)
     self.ScreenGui = screenGui
+    self.notifications = {}
     return self
 end
 
 function Notifications:ShowNotification(funcName, enabled)
     local notification = Instance.new("TextLabel")
     notification.Size = UDim2.new(0, 200, 0, 50)
-    notification.Position = UDim2.new(1, 20, 1, -70) -- Начальная позиция за правым краем
     notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     notification.Text = funcName .. " was "
     notification.TextColor3 = Color3.fromRGB(255, 255, 255)
     notification.TextSize = 14
     notification.Font = Enum.Font.SourceSans
-    notification.TextXAlignment = Enum.TextXAlignment.Center -- Центрируем текст
+    notification.TextXAlignment = Enum.TextXAlignment.Center
     notification.Parent = self.ScreenGui
     notification.BorderSizePixel = 0
     
@@ -28,8 +28,8 @@ function Notifications:ShowNotification(funcName, enabled)
     corner.Parent = notification
     
     local statusText = Instance.new("TextLabel")
-    statusText.Size = UDim2.new(0, 60, 1, 0) -- Уменьшаем ширину для корректного центрирования
-    statusText.Position = UDim2.new(0.5, 30, 0, 0) -- Смещаем для выравнивания
+    statusText.Size = UDim2.new(0, 60, 1, 0)
+    statusText.Position = UDim2.new(0.5, 30, 0, 0)
     statusText.BackgroundTransparency = 1
     statusText.Text = enabled and "enabled" or "disabled"
     statusText.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
@@ -38,25 +38,49 @@ function Notifications:ShowNotification(funcName, enabled)
     statusText.TextXAlignment = Enum.TextXAlignment.Left
     statusText.Parent = notification
     
+    -- Вычисляем начальную позицию с учётом стека
+    local baseY = 1
+    local offset = 0
+    for _, notif in ipairs(self.notifications) do
+        offset = offset + 53 -- 50 (высота) + 3 (отступ)
+    end
+    notification.Position = UDim2.new(1, 20, baseY, -70 - offset)
+    
+    table.insert(self.notifications, notification)
+    
     -- Анимация появления справа налево
     local enterTween = TweenService:Create(
         notification,
         TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {Position = UDim2.new(1, -220, 1, -70)} -- Конечная позиция
+        {Position = UDim2.new(1, -220, baseY, -70 - offset)}
     )
     enterTween:Play()
     
     wait(2)
     
-    -- Анимация ухода слева направо
+    -- Анимация ухода вправо
     local exitTween = TweenService:Create(
         notification,
         TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-        {Position = UDim2.new(1, 20, 1, -70)} -- Уходит вправо
+        {Position = UDim2.new(1, 20, baseY, -70 - offset)}
     )
     exitTween:Play()
     exitTween.Completed:Connect(function()
+        table.remove(self.notifications, table.find(self.notifications, notification))
         notification:Destroy()
+        -- Анимация опускания остальных уведомлений
+        for i, notif in ipairs(self.notifications) do
+            local newY = 1
+            local newOffset = 0
+            for j = 1, i - 1 do
+                newOffset = newOffset + 53
+            end
+            TweenService:Create(
+                notif,
+                TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Position = UDim2.new(1, -220, newY, -70 - newOffset)}
+            ):Play()
+        end
     end)
 end
 
