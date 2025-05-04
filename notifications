@@ -14,7 +14,7 @@ function Notifications.new(screenGui)
     return self
 end
 
-function Notifications:ShowNotification(text, state)
+function Notifications:ShowNotification(text)
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Size = UDim2.new(0, 300, 0, 50)
     NotificationFrame.Position = UDim2.new(1, -310, 1, -60 - (#self.Notifications * 60))
