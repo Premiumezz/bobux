@@ -1,4 +1,6 @@
 -- Notifications module for StarClient
+local TweenService = game:GetService("TweenService")
+
 local Notifications = {}
 Notifications.__index = Notifications
 
@@ -11,36 +13,47 @@ end
 function Notifications:ShowNotification(funcName, enabled)
     local notification = Instance.new("TextLabel")
     notification.Size = UDim2.new(0, 200, 0, 50)
-    notification.Position = UDim2.new(1, -220, 1, -70) -- Право нижний угол, скрыт
+    notification.Position = UDim2.new(1, 20, 1, -70) -- Начальная позиция за правым краем
     notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     notification.Text = funcName .. " was "
     notification.TextColor3 = Color3.fromRGB(255, 255, 255)
     notification.TextSize = 14
     notification.Font = Enum.Font.SourceSans
+    notification.TextXAlignment = Enum.TextXAlignment.Center -- Центрируем текст
     notification.Parent = self.ScreenGui
     notification.BorderSizePixel = 0
+    
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = notification
     
     local statusText = Instance.new("TextLabel")
-    statusText.Size = UDim2.new(0, 100, 1, 0)
-    statusText.Position = UDim2.new(0.5, 0, 0, 0)
+    statusText.Size = UDim2.new(0, 60, 1, 0) -- Уменьшаем ширину для корректного центрирования
+    statusText.Position = UDim2.new(0.5, 30, 0, 0) -- Смещаем для выравнивания
     statusText.BackgroundTransparency = 1
-    statusText.Text = enabled and "enable" or "disable"
+    statusText.Text = enabled and "enabled" or "disabled"
     statusText.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     statusText.TextSize = 14
     statusText.Font = Enum.Font.SourceSans
+    statusText.TextXAlignment = Enum.TextXAlignment.Left
     statusText.Parent = notification
     
-    -- Анимация появления слева направо
-    local enterTween = game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -220, 1, -70)})
+    -- Анимация появления справа налево
+    local enterTween = TweenService:Create(
+        notification,
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Position = UDim2.new(1, -220, 1, -70)} -- Конечная позиция
+    )
     enterTween:Play()
     
     wait(2)
     
-    -- Анимация ухода справа налево
-    local exitTween = game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 20, 1, -70)})
+    -- Анимация ухода слева направо
+    local exitTween = TweenService:Create(
+        notification,
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+        {Position = UDim2.new(1, 20, 1, -70)} -- Уходит вправо
+    )
     exitTween:Play()
     exitTween.Completed:Connect(function()
         notification:Destroy()
