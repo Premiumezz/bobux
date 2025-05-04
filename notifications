@@ -16,8 +16,8 @@ end
 
 function Notifications:ShowNotification(text, state)
     local NotificationFrame = Instance.new("Frame")
-    NotificationFrame.Size = UDim2.new(0, 200, 0, 50)
-    NotificationFrame.Position = UDim2.new(1, -210, 1, -60 - (#self.Notifications * 60))
+    NotificationFrame.Size = UDim2.new(0, 300, 0, 50)
+    NotificationFrame.Position = UDim2.new(1, -310, 1, -60 - (#self.Notifications * 60))
     NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     NotificationFrame.BorderSizePixel = 0
     NotificationFrame.Parent = self.ScreenGui
@@ -27,33 +27,22 @@ function Notifications:ShowNotification(text, state)
     Corner.Parent = NotificationFrame
 
     local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -10, 0, 20)
-    Title.Position = UDim2.new(0, 5, 0, 5)
+    Title.Size = UDim2.new(1, -10, 1, 0)
+    Title.Position = UDim2.new(0, 5, 0, 0)
     Title.BackgroundTransparency = 1
     Title.Text = text
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 14
+    Title.TextSize = 18
     Title.Font = Enum.Font.SourceSans
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = NotificationFrame
-
-    local Status = Instance.new("TextLabel")
-    Status.Size = UDim2.new(0, 60, 0, 20)
-    Status.Position = UDim2.new(1, -65, 0, 25)
-    Status.BackgroundTransparency = 1
-    Status.Text = state and "Enabled" or "Disabled"
-    Status.TextColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    Status.TextSize = 12
-    Status.Font = Enum.Font.SourceSans
-    Status.TextXAlignment = Enum.TextXAlignment.Right
-    Status.Parent = NotificationFrame
 
     table.insert(self.Notifications, NotificationFrame)
 
     local tweenIn = TweenService:Create(
         NotificationFrame,
         TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {Position = UDim2.new(1, -210, 1, -60 - (#self.Notifications * 60))}
+        {Position = UDim2.new(1, -310, 1, -60 - (#self.Notifications * 60))}
     )
     tweenIn:Play()
 
@@ -73,7 +62,7 @@ function Notifications:ShowNotification(text, state)
             local tween = TweenService:Create(
                 frame,
                 TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Position = UDim2.new(1, -210, 1, -60 - (i * 60))}
+                {Position = UDim2.new(1, -310, 1, -60 - (i * 60))}
             )
             tween:Play()
         end
