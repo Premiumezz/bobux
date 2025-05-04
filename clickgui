@@ -1,11 +1,10 @@
 -- StarClient ClickGui Library
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 -- Загрузка модуля уведомлений
 local Notifications = loadstring(game:HttpGet("https://raw.githubusercontent.com/Premiumezz/bobux/main/notifications"))()
-local notificationManager = Notifications.new(game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("StarClientGui"))
+local notificationManager
 
 -- Main ClickGui Module
 local StarClientGui = {}
@@ -13,6 +12,7 @@ StarClientGui.__index = StarClientGui
 
 -- Create new ClickGui instance
 function StarClientGui.new()
+    local UserInputService = game:GetService("UserInputService") -- Инициализация здесь
     local self = setmetatable({}, StarClientGui)
     
     -- ScreenGui Setup
@@ -21,6 +21,9 @@ function StarClientGui.new()
     self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     self.ScreenGui.Enabled = false
     self.ScreenGui.ResetOnSpawn = false
+    
+    -- Инициализация notificationManager после создания ScreenGui
+    notificationManager = Notifications.new(self.ScreenGui)
     
     -- Main Frame (Dark Gray with Rounded Corners)
     self.MainFrame = Instance.new("Frame")
@@ -173,6 +176,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     
     local firstFunction = #self.Functions[tabName] == 0
     local FuncFrame = Instance.new("Frame")
+    FuncFrame.Name = funcName .. "Frame" -- Уникальное имя для поиска
     FuncFrame.Size = UDim2.new(0.8, 0, 0, 50)
     FuncFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -207,6 +211,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     BindLabel.Parent = FuncFrame
     
     local BindButton = Instance.new("TextButton")
+    BindButton.Name = "BindButton" -- Имя для поиска
     BindButton.Size = UDim2.new(0.15, 0, 0, 20)
     BindButton.Position = UDim2.new(0.85, 0, 0, 5) -- Правый угол
     BindButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
@@ -221,6 +226,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     BindCorner.Parent = BindButton
     
     local Toggle = Instance.new("TextButton")
+    Toggle.Name = "Toggle" -- Имя для поиска
     Toggle.Size = UDim2.new(0, 20, 0, 20)
     Toggle.Position = UDim2.new(0.4, 0, 0, 5)
     Toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
@@ -261,7 +267,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     BindButton.MouseButton1Click:Connect(function()
         BindButton.Text = "..."
         local connection
-        connection = UserInputService.InputBegan:Connect(function(input)
+        connection = game:GetService("UserInputService").InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 bindKey = input.KeyCode
                 BindButton.Text = bindKey.Name
@@ -276,7 +282,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         end
     end)
     
-    UserInputService.InputBegan:Connect(function(input)
+    game:GetService("UserInputService").InputBegan:Connect(function(input)
         if bindKey and input.KeyCode == bindKey then
             enabled = not enabled
             Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
@@ -303,6 +309,7 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
     
     local firstFunction = #self.Functions[tabName] == 0
     local SliderFrame = Instance.new("Frame")
+    SliderFrame.Name = funcName .. "Frame"
     SliderFrame.Size = UDim2.new(0.8, 0, 0, 50)
     SliderFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     SliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -373,13 +380,13 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
         end
     end)
     
-    UserInputService.InputEnded:Connect(function(input)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
     
-    UserInputService.InputChanged:Connect(function(input)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mouseX = input.Position.X
             local barX = SliderBar.AbsolutePosition.X
@@ -403,6 +410,7 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback)
     
     local firstFunction = #self.Functions[tabName] == 0
     local RGBFrame = Instance.new("Frame")
+    RGBFrame.Name = funcName .. "Frame"
     RGBFrame.Size = UDim2.new(0.8, 0, 0, 110)
     RGBFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     RGBFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -503,13 +511,13 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback)
             end
         end)
         
-        UserInputService.InputEnded:Connect(function(input)
+        game:GetService("UserInputService").InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = false
             end
         end)
         
-        UserInputService.InputChanged:Connect(function(input)
+        game:GetService("UserInputService").InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 local mouseX = input.Position.X
                 local barX = SliderBar.AbsolutePosition.X
@@ -536,6 +544,7 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
     
     local firstFunction = #self.Functions[tabName] == 0
     local MultiFrame = Instance.new("Frame")
+    MultiFrame.Name = funcName .. "Frame"
     MultiFrame.Size = UDim2.new(0.8, 0, 0, 50 + (#options - 1) * 25)
     MultiFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
