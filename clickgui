@@ -281,121 +281,17 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     return {Toggle = Toggle, BindButton = BindButton}
 end
 
-function StarClientGui:AddSubFunctionToContainer(container, subFuncName, callback)
-    local SubFuncFrame = Instance.new("Frame")
-    SubFuncFrame.Size = UDim2.new(1, 0, 0, 30)
-    SubFuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    SubFuncFrame.BorderSizePixel = 1
-    SubFuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    SubFuncFrame.Parent = container
+function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
+    local TabFrame = self.Tabs[tabName]
+    if not TabFrame then return end
     
-    local SubFuncCorner = Instance.new("UICorner")
-    SubFuncCorner.CornerRadius = UDim.new(0, 4)
-    SubFuncCorner.Parent = SubFuncFrame
-    
-    local SubFuncName = Instance.new("TextLabel")
-    SubFuncName.Size = UDim2.new(0.7, 0, 0, 20)
-    SubFuncName.Position = UDim2.new(0, 10, 0, 5)
-    SubFuncName.BackgroundTransparency = 1
-    SubFuncName.Text = subFuncName
-    SubFuncName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SubFuncName.TextSize = 14
-    SubFuncName.Font = Enum.Font.SourceSans
-    SubFuncName.TextXAlignment = Enum.TextXAlignment.Left
-    SubFuncName.Parent = SubFuncFrame
-    
-    local SubToggle = Instance.new("TextButton")
-    SubToggle.Size = UDim2.new(0, 20, 0, 20)
-    SubToggle.Position = UDim2.new(1, -30, 0, 5)
-    SubToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    SubToggle.Text = ""
-    SubToggle.Parent = SubFuncFrame
-    
-    local SubToggleCorner = Instance.new("UICorner")
-    SubToggleCorner.CornerRadius = UDim.new(0, 4)
-    SubToggleCorner.Parent = SubToggle
-    
-    local enabled = false
-    SubToggle.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        SubToggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
-        if callback then
-            callback(enabled)
-        end
-    end)
-end
-
-function StarClientGui:AddMultiOptionToContainer(container, funcName, options, callback)
-    local MultiFrame = Instance.new("Frame")
-    MultiFrame.Size = UDim2.new(1, 0, 0, 50 + (#options - 1) * 25)
-    MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    MultiFrame.BorderSizePixel = 1
-    MultiFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    MultiFrame.Parent = container
-    
-    local MultiCorner = Instance.new("UICorner")
-    MultiCorner.CornerRadius = UDim.new(0, 4)
-    MultiCorner.Parent = MultiFrame
-    
-    local MultiName = Instance.new("TextLabel")
-    MultiName.Size = UDim2.new(1, -20, 0, 20)
-    MultiName.Position = UDim2.new(0, 10, 0, 5)
-    MultiName.BackgroundTransparency = 1
-    MultiName.Text = funcName
-    MultiName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    MultiName.TextSize = 14
-    MultiName.Font = Enum.Font.SourceSans
-    MultiName.TextXAlignment = Enum.TextXAlignment.Left
-    MultiName.Parent = MultiFrame
-    
-    local OptionsContainer = Instance.new("Frame")
-    OptionsContainer.Size = UDim2.new(1, -20, 0, #options * 25)
-    OptionsContainer.Position = UDim2.new(0, 10, 0, 30)
-    OptionsContainer.BackgroundTransparency = 1
-    OptionsContainer.Parent = MultiFrame
-    
-    local UIGridLayout = Instance.new("UIGridLayout")
-    UIGridLayout.CellSize = UDim2.new(0, 80, 0, 20)
-    UIGridLayout.CellPadding = UDim2.new(0, 5, 0, 5)
-    UIGridLayout.Parent = OptionsContainer
-    
-    local selectedOptions = {}
-    for _, option in ipairs(options) do
-        local OptionButton = Instance.new("TextButton")
-        OptionButton.Size = UDim2.new(0, 80, 0, 20)
-        OptionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        OptionButton.Text = option
-        OptionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        OptionButton.TextSize = 12
-        OptionButton.Font = Enum.Font.SourceSans
-        OptionButton.Parent = OptionsContainer
-        
-        local OptionCorner = Instance.new("UICorner")
-        OptionCorner.CornerRadius = UDim.new(0, 4)
-        OptionCorner.Parent = OptionButton
-        
-        OptionButton.MouseButton1Click:Connect(function()
-            if table.find(selectedOptions, option) then
-                OptionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-                table.remove(selectedOptions, table.find(selectedOptions, option))
-            else
-                OptionButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-                table.insert(selectedOptions, option)
-            end
-            if callback then
-                callback(selectedOptions)
-            end
-        end)
-    end
-end
-
-function StarClientGui:AddSliderToContainer(container, funcName, min, max, default, callback)
     local SliderFrame = Instance.new("Frame")
-    SliderFrame.Size = UDim2.new(1, 0, 0, 50)
+    SliderFrame.Size = UDim2.new(1, -30, 0, 50)
+    SliderFrame.Position = UDim2.new(0, 10, 0, 10)
     SliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     SliderFrame.BorderSizePixel = 1
     SliderFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    SliderFrame.Parent = container
+    SliderFrame.Parent = TabFrame
     
     local SliderCorner = Instance.new("UICorner")
     SliderCorner.CornerRadius = UDim.new(0, 4)
@@ -484,98 +380,17 @@ function StarClientGui:AddSliderToContainer(container, funcName, min, max, defau
     end)
 end
 
-function StarClientGui:AddDropdownToContainer(container, funcName, options, callback)
-    local DropdownFrame = Instance.new("Frame")
-    DropdownFrame.Size = UDim2.new(1, 0, 0, 30)
-    DropdownFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    DropdownFrame.BorderSizePixel = 1
-    DropdownFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    DropdownFrame.Parent = container
+function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback)
+    local TabFrame = self.Tabs[tabName]
+    if not TabFrame then return end
     
-    local DropdownCorner = Instance.new("UICorner")
-    DropdownCorner.CornerRadius = UDim.new(0, 4)
-    DropdownCorner.Parent = DropdownFrame
-    
-    local DropdownName = Instance.new("TextLabel")
-    DropdownName.Size = UDim2.new(1, -20, 0, 20)
-    DropdownName.Position = UDim2.new(0, 10, 0, 5)
-    DropdownName.BackgroundTransparency = 1
-    DropdownName.Text = funcName
-    DropdownName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DropdownName.TextSize = 14
-    DropdownName.Font = Enum.Font.SourceSans
-    DropdownName.TextXAlignment = Enum.TextXAlignment.Left
-    DropdownName.Parent = DropdownFrame
-    
-    local ListFrame = Instance.new("Frame")
-    ListFrame.Size = UDim2.new(1, -10, 0, 0)
-    ListFrame.Position = UDim2.new(0, 5, 0, 30)
-    ListFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    ListFrame.BorderSizePixel = 1
-    ListFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    ListFrame.ClipsDescendants = true
-    ListFrame.Visible = false
-    ListFrame.Parent = DropdownFrame
-    
-    local ListCorner = Instance.new("UICorner")
-    ListCorner.CornerRadius = UDim.new(0, 4)
-    ListCorner.Parent = ListFrame
-    
-    local UIListLayout = Instance.new("UIListLayout")
-    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    UIListLayout.Parent = ListFrame
-    
-    local Arrow = Instance.new("TextButton")
-    Arrow.Size = UDim2.new(0, 20, 0, 20)
-    Arrow.Position = UDim2.new(1, -30, 0, 5)
-    Arrow.BackgroundTransparency = 1
-    Arrow.Text = "↓"
-    Arrow.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Arrow.TextSize = 14
-    Arrow.Parent = DropdownFrame
-    
-    local expanded = false
-    Arrow.MouseButton1Click:Connect(function()
-        expanded = not expanded
-        ListFrame.Visible = expanded
-        Arrow.Text = expanded and "↑" or "↓"
-        ListFrame.Size = expanded and UDim2.new(1, -10, 0, #options * 25) or UDim2.new(1, -10, 0, 0)
-        DropdownFrame.Size = expanded and UDim2.new(1, -10, 0, 30 + #options * 25) or UDim2.new(1, -10, 0, 30)
-        container.Parent.Parent.CanvasSize = UDim2.new(0, 0, 0, container.Parent.Parent.UIListLayout.AbsoluteContentSize.Y + 10)
-    end)
-    
-    for _, option in ipairs(options) do
-        local OptionButton = Instance.new("TextButton")
-        OptionButton.Size = UDim2.new(1, 0, 0, 25)
-        OptionButton.BackgroundTransparency = 1
-        OptionButton.Text = option
-        OptionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        OptionButton.TextSize = 14
-        OptionButton.Font = Enum.Font.SourceSans
-        OptionButton.Parent = ListFrame
-        
-        OptionButton.MouseButton1Click:Connect(function()
-            if table.find(selectedOptions, option) then
-                OptionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-                table.remove(selectedOptions, table.find(selectedOptions, option))
-            else
-                OptionButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-                table.insert(selectedOptions, option)
-            end
-            if callback then
-                callback(selectedOptions)
-            end
-        end)
-    end
-end
-
-function StarClientGui:AddRGBPickerToContainer(container, funcName, defaultColor, callback)
     local RGBFrame = Instance.new("Frame")
-    RGBFrame.Size = UDim2.new(1, 0, 0, 110) -- Высота для трёх слайдеров
+    RGBFrame.Size = UDim2.new(1, -30, 0, 110) -- Высота для трёх слайдеров
+    RGBFrame.Position = UDim2.new(0, 10, 0, 10)
     RGBFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     RGBFrame.BorderSizePixel = 1
     RGBFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    RGBFrame.Parent = container
+    RGBFrame.Parent = TabFrame
     
     local RGBCorner = Instance.new("UICorner")
     RGBCorner.CornerRadius = UDim.new(0, 4)
@@ -692,6 +507,74 @@ function StarClientGui:AddRGBPickerToContainer(container, funcName, defaultColor
                 if callback then
                     callback(color)
                 end
+            end
+        end)
+    end
+end
+
+function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
+    local TabFrame = self.Tabs[tabName]
+    if not TabFrame then return end
+    
+    local MultiFrame = Instance.new("Frame")
+    MultiFrame.Size = UDim2.new(1, -30, 0, 50 + (#options - 1) * 25)
+    MultiFrame.Position = UDim2.new(0, 10, 0, 10)
+    MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    MultiFrame.BorderSizePixel = 1
+    MultiFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
+    MultiFrame.Parent = TabFrame
+    
+    local MultiCorner = Instance.new("UICorner")
+    MultiCorner.CornerRadius = UDim.new(0, 4)
+    MultiCorner.Parent = MultiFrame
+    
+    local MultiName = Instance.new("TextLabel")
+    MultiName.Size = UDim2.new(1, -20, 0, 20)
+    MultiName.Position = UDim2.new(0, 10, 0, 5)
+    MultiName.BackgroundTransparency = 1
+    MultiName.Text = funcName
+    MultiName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MultiName.TextSize = 14
+    MultiName.Font = Enum.Font.SourceSans
+    MultiName.TextXAlignment = Enum.TextXAlignment.Left
+    MultiName.Parent = MultiFrame
+    
+    local OptionsContainer = Instance.new("Frame")
+    OptionsContainer.Size = UDim2.new(1, -20, 0, #options * 25)
+    OptionsContainer.Position = UDim2.new(0, 10, 0, 30)
+    OptionsContainer.BackgroundTransparency = 1
+    OptionsContainer.Parent = MultiFrame
+    
+    local UIGridLayout = Instance.new("UIGridLayout")
+    UIGridLayout.CellSize = UDim2.new(0, 80, 0, 20)
+    UIGridLayout.CellPadding = UDim2.new(0, 5, 0, 5)
+    UIGridLayout.Parent = OptionsContainer
+    
+    local selectedOptions = {}
+    for _, option in ipairs(options) do
+        local OptionButton = Instance.new("TextButton")
+        OptionButton.Size = UDim2.new(0, 80, 0, 20)
+        OptionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        OptionButton.Text = option
+        OptionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        OptionButton.TextSize = 12
+        OptionButton.Font = Enum.Font.SourceSans
+        OptionButton.Parent = OptionsContainer
+        
+        local OptionCorner = Instance.new("UICorner")
+        OptionCorner.CornerRadius = UDim.new(0, 4)
+        OptionCorner.Parent = OptionButton
+        
+        OptionButton.MouseButton1Click:Connect(function()
+            if table.find(selectedOptions, option) then
+                OptionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                table.remove(selectedOptions, table.find(selectedOptions, option))
+            else
+                OptionButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+                table.insert(selectedOptions, option)
+            end
+            if callback then
+                callback(selectedOptions)
             end
         end)
     end
