@@ -15,15 +15,21 @@ function StarClientGui.new()
     local UserInputService = game:GetService("UserInputService") -- Инициализация здесь
     local self = setmetatable({}, StarClientGui)
     
-    -- ScreenGui Setup
+    -- ScreenGui Setup for ClickGui
     self.ScreenGui = Instance.new("ScreenGui")
     self.ScreenGui.Name = "StarClientGui"
     self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     self.ScreenGui.Enabled = false
     self.ScreenGui.ResetOnSpawn = false
     
-    -- Инициализация notificationManager после создания ScreenGui
-    notificationManager = Notifications.new(self.ScreenGui)
+    -- Separate ScreenGui for Notifications
+    local NotificationGui = Instance.new("ScreenGui")
+    NotificationGui.Name = "StarClientNotifications"
+    NotificationGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    NotificationGui.ResetOnSpawn = false
+    
+    -- Инициализация notificationManager с отдельным ScreenGui
+    notificationManager = Notifications.new(NotificationGui)
     
     -- Main Frame (Dark Gray with Rounded Corners)
     self.MainFrame = Instance.new("Frame")
@@ -610,6 +616,12 @@ end
 
 function StarClientGui:Destroy()
     self.ScreenGui:Destroy()
+    -- Уничтожаем NotificationGui
+    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    local notificationGui = playerGui:FindFirstChild("StarClientNotifications")
+    if notificationGui then
+        notificationGui:Destroy()
+    end
 end
 
 return StarClientGui
