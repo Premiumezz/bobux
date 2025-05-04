@@ -20,6 +20,7 @@ function Notifications:ShowNotification(funcName, enabled)
     notification.TextSize = 14
     notification.Font = Enum.Font.SourceSans
     notification.TextXAlignment = Enum.TextXAlignment.Center
+    notification.TextYAlignment = Enum.TextYAlignment.Center -- Центрирование по вертикали
     notification.Parent = self.ScreenGui
     notification.BorderSizePixel = 0
     
@@ -35,7 +36,8 @@ function Notifications:ShowNotification(funcName, enabled)
     statusText.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     statusText.TextSize = 14
     statusText.Font = Enum.Font.SourceSans
-    statusText.TextXAlignment = Enum.TextXAlignment.Left
+    statusText.TextXAlignment = Enum.TextXAlignment.Center
+    statusText.TextYAlignment = Enum.TextYAlignment.Center -- Центрирование по вертикали
     statusText.Parent = notification
     
     -- Вычисляем начальную позицию с учётом стека
