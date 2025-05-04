@@ -1,7 +1,4 @@
 -- StarClient ClickGui Library
--- Designed to be loaded from GitHub
--- Supports tabs, scrollable functions, sub-functions, multi-options, sliders, dropdowns, color pickers, and UnHook function
-
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -124,10 +121,13 @@ function StarClientGui.new()
         UIListLayout.Padding = UDim.new(0, 5)
         UIListLayout.Parent = TabFrame
         
+        local TopPadding = Instance.new("UIListLayout")
+        TopPadding.Padding = UDim.new(0, 10)
+        TopPadding.Parent = TabFrame
+        
         self.Tabs[tabName] = TabFrame
         self.TabButtons[tabName] = TabButton
         
-        -- Tab Click Animation
         TabButton.MouseButton1Click:Connect(function()
             if self.CurrentTab ~= tabName then
                 if self.CurrentTab then
@@ -146,68 +146,15 @@ function StarClientGui.new()
         end)
     end
     
-    -- Toggle GUI with Insert Key
     UserInputService.InputBegan:Connect(function(input)
         if input.KeyCode == Enum.KeyCode.Insert then
             self.ScreenGui.Enabled = not self.ScreenGui.Enabled
         end
     end)
     
-    -- Add UnHook Function to Utils Tab
-    self:AddFunction("Utils", "UnHook", function(enabled)
-        if enabled then
-            self:Destroy()
-        end
-    end)
-    
-    -- Notification in Bottom Right Corner
-    local success, err = pcall(function()
-        local NotificationFrame = Instance.new("Frame")
-        NotificationFrame.Size = UDim2.new(0, 200, 0, 40)
-        NotificationFrame.Position = UDim2.new(1, 200, 1, -50) -- Start off-screen to the right
-        NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        NotificationFrame.BorderSizePixel = 0
-        NotificationFrame.Parent = self.ScreenGui
-        
-        local NotificationCorner = Instance.new("UICorner")
-        NotificationCorner.CornerRadius = UDim.new(0, 4)
-        NotificationCorner.Parent = NotificationFrame
-        
-        local NotificationLabel = Instance.new("TextLabel")
-        NotificationLabel.Size = UDim2.new(1, 0, 1, 0)
-        NotificationLabel.BackgroundTransparency = 1
-        NotificationLabel.Text = "Starclient.lua injected"
-        NotificationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        NotificationLabel.TextSize = 14
-        NotificationLabel.Font = Enum.Font.SourceSans
-        NotificationLabel.Parent = NotificationFrame
-        
-        -- Animation: Slide in from right to left
-        local slideIn = TweenService:Create(
-            NotificationFrame,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {Position = UDim2.new(1, -210, 1, -50)}
-        )
-        slideIn:Play()
-        
-        -- Wait 3 seconds, then slide out from left to right
-        task.wait(3)
-        local slideOut = TweenService:Create(
-            NotificationFrame,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            {Position = UDim2.new(1, 200, 1, -50)}
-        )
-        slideOut:Play()
-    end)
-    
-    if not success then
-        warn("Failed to create notification: " .. tostring(err))
-    end
-    
     return self
 end
 
--- Add Function to Tab
 function StarClientGui:AddFunction(tabName, funcName, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
@@ -254,52 +201,50 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         end
     end)
     
-    -- Update ScrollingFrame Canvas
     TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
--- Add Sub-Function
 function StarClientGui:AddSubFunction(tabName, funcName, subFuncName, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
     
-    local SubFuncFrame = Instance.new("Frame")
-    SubFuncFrame.Size = UDim2.new(1, -10, 0, 30)
-    SubFuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    SubFuncFrame.BorderSizePixel = 1
-    SubFuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    SubFuncFrame.Parent = TabFrame
+    local FuncFrame = Instance.new("Frame")
+    FuncFrame.Size = UDim2.new(1, -10, 0, 30)
+    FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    FuncFrame.BorderSizePixel = 1
+    FuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
+    FuncFrame.Parent = TabFrame
     
-    local SubFuncCorner = Instance.new("UICorner")
-    SubFuncCorner.CornerRadius = UDim.new(0, 4)
-    SubFuncCorner.Parent = SubFuncFrame
+    local FuncCorner = Instance.new("UICorner")
+    FuncCorner.CornerRadius = UDim.new(0, 4)
+    FuncCorner.Parent = FuncFrame
     
-    local SubFuncName = Instance.new("TextLabel")
-    SubFuncName.Size = UDim2.new(0.7, 0, 0, 20)
-    SubFuncName.Position = UDim2.new(0, 10, 0, 5)
-    SubFuncName.BackgroundTransparency = 1
-    SubFuncName.Text = subFuncName
-    SubFuncName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SubFuncName.TextSize = 14
-    SubFuncName.Font = Enum.Font.SourceSans
-    SubFuncName.TextXAlignment = Enum.TextXAlignment.Left
-    SubFuncName.Parent = SubFuncFrame
+    local FuncName = Instance.new("TextLabel")
+    FuncName.Size = UDim2.new(0.7, 0, 0, 20)
+    FuncName.Position = UDim2.new(0, 10, 0, 5)
+    FuncName.BackgroundTransparency = 1
+    FuncName.Text = subFuncName
+    FuncName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FuncName.TextSize = 14
+    FuncName.Font = Enum.Font.SourceSans
+    FuncName.TextXAlignment = Enum.TextXAlignment.Left
+    FuncName.Parent = FuncFrame
     
-    local SubToggle = Instance.new("TextButton")
-    SubToggle.Size = UDim2.new(0, 20, 0, 20)
-    SubToggle.Position = UDim2.new(1, -30, 0, 5)
-    SubToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    SubToggle.Text = ""
-    SubToggle.Parent = SubFuncFrame
+    local Toggle = Instance.new("TextButton")
+    Toggle.Size = UDim2.new(0, 20, 0, 20)
+    Toggle.Position = UDim2.new(1, -30, 0, 5)
+    Toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    Toggle.Text = ""
+    Toggle.Parent = FuncFrame
     
-    local SubToggleCorner = Instance.new("UICorner")
-    SubToggleCorner.CornerRadius = UDim.new(0, 4)
-    SubToggleCorner.Parent = SubToggle
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 4)
+    ToggleCorner.Parent = Toggle
     
     local enabled = false
-    SubToggle.MouseButton1Click:Connect(function()
+    Toggle.MouseButton1Click:Connect(function()
         enabled = not enabled
-        SubToggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
+        Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
         if callback then
             callback(enabled)
         end
@@ -308,7 +253,6 @@ function StarClientGui:AddSubFunction(tabName, funcName, subFuncName, callback)
     TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
--- Add Multi-Option Function
 function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
@@ -325,7 +269,7 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
     MultiCorner.Parent = MultiFrame
     
     local MultiName = Instance.new("TextLabel")
-    MultiName.Size = UDim2.new(1, 0, 0, 20)
+    MultiName.Size = UDim2.new(1, -20, 0, 20)
     MultiName.Position = UDim2.new(0, 10, 0, 5)
     MultiName.BackgroundTransparency = 1
     MultiName.Text = funcName
@@ -376,7 +320,6 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
     TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
--- Add Slider
 function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
@@ -477,7 +420,6 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
     TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
--- Add Dropdown
 function StarClientGui:AddDropdown(tabName, funcName, options, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
@@ -568,7 +510,6 @@ function StarClientGui:AddDropdown(tabName, funcName, options, callback)
     TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
--- Add Color Picker
 function StarClientGui:AddColorPicker(tabName, funcName, defaultColor, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
@@ -620,12 +561,11 @@ function StarClientGui:AddColorPicker(tabName, funcName, defaultColor, callback)
     PickerCorner.CornerRadius = UDim.new(0, 4)
     PickerCorner.Parent = PickerFrame
     
-    -- Simplified Gradient (Using ImageLabel for gradient effect)
     local Gradient = Instance.new("ImageLabel")
     Gradient.Size = UDim2.new(1, -10, 1, -30)
     Gradient.Position = UDim2.new(0, 5, 0, 5)
     Gradient.BackgroundTransparency = 1
-    Gradient.Image = "rbxassetid://2594291613" -- Roblox gradient asset
+    Gradient.Image = "rbxassetid://2594291613"
     Gradient.Parent = PickerFrame
     
     local HueBar = Instance.new("Frame")
@@ -654,19 +594,30 @@ function StarClientGui:AddColorPicker(tabName, funcName, defaultColor, callback)
         TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
     end)
     
-    -- Simplified color picking logic
+    local hsv = {H = 0, S = 0, V = 1}
     Gradient.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 and expanded then
             local mouse = UserInputService:GetMouseLocation()
-            local relX = (mouse.X - Gradient.AbsolutePosition.X) / Gradient.AbsoluteSize.X
-            local relY = (mouse.Y - Gradient.AbsolutePosition.Y) / Gradient.AbsoluteSize.Y
-            relX = math.clamp(relX, 0, 1)
-            relY = math.clamp(relY, 0, 1)
-            local h = (mouse.X - HueBar.AbsolutePosition.X) / HueBar.AbsoluteSize.X
-            h = math.clamp(h, 0, 1) * 360
-            local s = relX
-            local v = 1 - relY
-            local color = Color3.fromHSV(h / 360, s, v)
+            local x = math.clamp(mouse.X - Gradient.AbsolutePosition.X, 0, Gradient.AbsoluteSize.X)
+            local y = math.clamp(mouse.Y - Gradient.AbsolutePosition.Y, 0, Gradient.AbsoluteSize.Y)
+            hsv.S = x / Gradient.AbsoluteSize.X
+            hsv.V = 1 - (y / Gradient.AbsoluteSize.Y)
+            local hueX = math.clamp(mouse.X - HueBar.AbsolutePosition.X, 0, HueBar.AbsoluteSize.X)
+            hsv.H = hueX / HueBar.AbsoluteSize.X * 360
+            local color = Color3.fromHSV(hsv.H / 360, hsv.S, hsv.V)
+            ColorPreview.BackgroundColor3 = color
+            if callback then
+                callback(color)
+            end
+        end
+    end)
+    
+    HueBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and expanded then
+            local mouse = UserInputService:GetMouseLocation()
+            local x = math.clamp(mouse.X - HueBar.AbsolutePosition.X, 0, HueBar.AbsoluteSize.X)
+            hsv.H = x / HueBar.AbsoluteSize.X * 360
+            local color = Color3.fromHSV(hsv.H / 360, hsv.S, hsv.V)
             ColorPreview.BackgroundColor3 = color
             if callback then
                 callback(color)
@@ -677,7 +628,6 @@ function StarClientGui:AddColorPicker(tabName, funcName, defaultColor, callback)
     TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
--- Destroy GUI
 function StarClientGui:Destroy()
     self.ScreenGui:Destroy()
 end
