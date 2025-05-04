@@ -179,7 +179,7 @@ function StarClientGui.new()
         end
     end)
     
-    return self
+    return self, notificationManager
 end
 
 function StarClientGui:AddFunction(tabName, funcName, callback)
