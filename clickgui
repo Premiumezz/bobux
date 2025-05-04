@@ -119,7 +119,7 @@ function StarClientGui.new()
         local UIListLayout = Instance.new("UIListLayout")
         UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
         UIListLayout.Padding = UDim.new(0, 5)
-        UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center -- Центрирование
+        UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         UIListLayout.Parent = TabFrame
         
         local UIPadding = Instance.new("UIPadding")
@@ -166,8 +166,8 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     if not TabFrame then return end
     
     local FuncFrame = Instance.new("Frame")
-    FuncFrame.Size = UDim2.new(0.8, 0, 0, 50) -- Уменьшен размер для центрирования
-    FuncFrame.Position = UDim2.new(0, 0, 0, 0) -- Позиция будет управляться UIListLayout
+    FuncFrame.Size = UDim2.new(0.8, 0, 0, 50)
+    FuncFrame.Position = UDim2.new(0, 0, 0, 0)
     FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     FuncFrame.BorderSizePixel = 1
     FuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -190,7 +190,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     
     local BindLabel = Instance.new("TextLabel")
     BindLabel.Size = UDim2.new(0.2, 0, 0, 20)
-    BindLabel.Position = UDim2.new(0.55, 0, 0, 5) -- Отступ от Toggle
+    BindLabel.Position = UDim2.new(0.55, 0, 0, 5)
     BindLabel.BackgroundTransparency = 1
     BindLabel.Text = "Bind:"
     BindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -201,7 +201,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     
     local BindButton = Instance.new("TextButton")
     BindButton.Size = UDim2.new(0.15, 0, 0, 20)
-    BindButton.Position = UDim2.new(0.75, 0, 0, 5) -- Отступ от Toggle
+    BindButton.Position = UDim2.new(0.75, 0, 0, 5)
     BindButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     BindButton.Text = "None"
     BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -215,7 +215,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     
     local Toggle = Instance.new("TextButton")
     Toggle.Size = UDim2.new(0, 20, 0, 20)
-    Toggle.Position = UDim2.new(0.4, 0, 0, 5) -- Сдвинут ближе к центру
+    Toggle.Position = UDim2.new(0.4, 0, 0, 5)
     Toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     Toggle.Text = ""
     Toggle.Parent = FuncFrame
@@ -246,22 +246,8 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         FuncFrame.Size = enabled and UDim2.new(0.8, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(0.8, 0, 0, 50)
         TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
         if callback then
-            local notification = Instance.new("TextLabel")
-            notification.Size = UDim2.new(0, 200, 0, 50)
-            notification.Position = UDim2.new(0.5, -100, 0.5, -25)
-            notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            notification.Text = enabled and funcName .. " Enabled" or funcName .. " Disabled"
-            notification.TextColor3 = Color3.fromRGB(255, 255, 255)
-            notification.TextSize = 14
-            notification.Font = Enum.Font.SourceSans
-            notification.Parent = self.ScreenGui
-            notification.BorderSizePixel = 0
-            local corner = Instance.new("UICorner")
-            corner.CornerRadius = UDim.new(0, 4)
-            corner.Parent = notification
-            wait(2)
-            notification:Destroy()
             callback(enabled)
+            self:ShowNotification(funcName, enabled)
         end
     end)
     
@@ -291,22 +277,8 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
             FuncFrame.Size = enabled and UDim2.new(0.8, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(0.8, 0, 0, 50)
             TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
             if callback then
-                local notification = Instance.new("TextLabel")
-                notification.Size = UDim2.new(0, 200, 0, 50)
-                notification.Position = UDim2.new(0.5, -100, 0.5, -25)
-                notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                notification.Text = enabled and funcName .. " Enabled" or funcName .. " Disabled"
-                notification.TextColor3 = Color3.fromRGB(255, 255, 255)
-                notification.TextSize = 14
-                notification.Font = Enum.Font.SourceSans
-                notification.Parent = self.ScreenGui
-                notification.BorderSizePixel = 0
-                local corner = Instance.new("UICorner")
-                corner.CornerRadius = UDim.new(0, 4)
-                corner.Parent = notification
-                wait(2)
-                notification:Destroy()
                 callback(enabled)
+                self:ShowNotification(funcName, enabled)
             end
         elseif input.KeyCode == Enum.KeyCode.Delete and BindButton then
             bindKey = nil
@@ -618,6 +590,45 @@ end
 
 function StarClientGui:Destroy()
     self.ScreenGui:Destroy()
+end
+
+function StarClientGui:ShowNotification(funcName, enabled)
+    local notification = Instance.new("TextLabel")
+    notification.Size = UDim2.new(0, 200, 0, 50)
+    notification.Position = UDim2.new(1, -220, 1, -70) -- Право нижний угол, скрыт
+    notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    notification.Text = funcName .. " was "
+    notification.TextColor3 = Color3.fromRGB(255, 255, 255)
+    notification.TextSize = 14
+    notification.Font = Enum.Font.SourceSans
+    notification.Parent = self.ScreenGui
+    notification.BorderSizePixel = 0
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = notification
+    
+    local statusText = Instance.new("TextLabel")
+    statusText.Size = UDim2.new(0, 100, 1, 0)
+    statusText.Position = UDim2.new(0.5, 0, 0, 0)
+    statusText.BackgroundTransparency = 1
+    statusText.Text = enabled and "enable" or "disable"
+    statusText.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    statusText.TextSize = 14
+    statusText.Font = Enum.Font.SourceSans
+    statusText.Parent = notification
+    
+    -- Анимация появления слева направо
+    local enterTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -220, 1, -70)})
+    enterTween:Play()
+    
+    wait(2)
+    
+    -- Анимация ухода справа налево
+    local exitTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 20, 1, -70)})
+    exitTween:Play()
+    exitTween.Completed:Connect(function()
+        notification:Destroy()
+    end)
 end
 
 return StarClientGui
