@@ -172,7 +172,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     FuncCorner.Parent = FuncFrame
     
     local FuncName = Instance.new("TextLabel")
-    FuncName.Size = UDim2.new(0.7, 0, 0, 20)
+    FuncName.Size = UDim2.new(0.5, 0, 0, 20)
     FuncName.Position = UDim2.new(0, 10, 0, 5)
     FuncName.BackgroundTransparency = 1
     FuncName.Text = funcName
@@ -181,6 +181,31 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     FuncName.Font = Enum.Font.SourceSans
     FuncName.TextXAlignment = Enum.TextXAlignment.Left
     FuncName.Parent = FuncFrame
+    
+    local BindLabel = Instance.new("TextLabel")
+    BindLabel.Size = UDim2.new(0.2, 0, 0, 20)
+    BindLabel.Position = UDim2.new(0.6, 0, 0, 5)
+    BindLabel.BackgroundTransparency = 1
+    BindLabel.Text = "Bind:"
+    BindLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BindLabel.TextSize = 14
+    BindLabel.Font = Enum.Font.SourceSans
+    BindLabel.TextXAlignment = Enum.TextXAlignment.Left
+    BindLabel.Parent = FuncFrame
+    
+    local BindButton = Instance.new("TextButton")
+    BindButton.Size = UDim2.new(0.15, 0, 0, 20)
+    BindButton.Position = UDim2.new(0.8, 0, 0, 5)
+    BindButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    BindButton.Text = "None"
+    BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BindButton.TextSize = 12
+    BindButton.Font = Enum.Font.SourceSans
+    BindButton.Parent = FuncFrame
+    
+    local BindCorner = Instance.new("UICorner")
+    BindCorner.CornerRadius = UDim.new(0, 4)
+    BindCorner.Parent = BindButton
     
     local Toggle = Instance.new("TextButton")
     Toggle.Size = UDim2.new(0, 20, 0, 20)
@@ -207,6 +232,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     SubUIListLayout.Parent = SubContainer
     
     local enabled = false
+    local bindKey = nil
     Toggle.MouseButton1Click:Connect(function()
         enabled = not enabled
         Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
@@ -218,30 +244,41 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         end
     end)
     
-    -- Add sub-elements to SubContainer
-    self:AddSubFunctionToContainer(SubContainer, "SubTest1", function(subEnabled)
-        print("SubTest1 is " .. (subEnabled and "enabled" or "disabled"))
+    BindButton.MouseButton1Click:Connect(function()
+        BindButton.Text = "..."
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                bindKey = input.KeyCode
+                BindButton.Text = bindKey.Name
+                connection:Disconnect()
+            end
+        end)
+        wait(1) -- Таймаут на выбор клавиши
+        if BindButton.Text == "..." then
+            BindButton.Text = "None"
+            bindKey = nil
+            connection:Disconnect()
+        end
     end)
     
-    self:AddMultiOptionToContainer(SubContainer, "MultiTest", {"Option1", "Option2", "Option3"}, function(option)
-        print("MultiTest selected: " .. option)
+    UserInputService.InputBegan:Connect(function(input)
+        if bindKey and input.KeyCode == bindKey then
+            enabled = not enabled
+            Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
+            SubContainer.Visible = enabled
+            FuncFrame.Size = enabled and UDim2.new(1, -30, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(1, -30, 0, 50)
+            TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+            if callback then
+                callback(enabled)
+            end
+        elseif input.KeyCode == Enum.KeyCode.Delete and BindButton then
+            bindKey = nil
+            BindButton.Text = "None"
+        end
     end)
     
-    self:AddSliderToContainer(SubContainer, "SliderTest", 0, 100, 50, function(value)
-        print("SliderTest value: " .. value)
-    end)
-    
-    self:AddDropdownToContainer(SubContainer, "DropdownTest", {"Choice1", "Choice2", "Choice3"}, function(choice)
-        print("DropdownTest selected: " .. choice)
-    end)
-    
-    self:AddColorPickerToContainer(SubContainer, "ColorTest", Color3.fromRGB(255, 0, 0), function(color)
-        print("ColorTest selected: " .. tostring(color))
-    end)
-    
-    -- Adjust initial height
-    FuncFrame.Size = UDim2.new(1, -30, 0, 50)
-    TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+    return {Toggle = Toggle, BindButton = BindButton}
 end
 
 function StarClientGui:AddSubFunctionToContainer(container, subFuncName, callback)
@@ -290,7 +327,7 @@ end
 
 function StarClientGui:AddMultiOptionToContainer(container, funcName, options, callback)
     local MultiFrame = Instance.new("Frame")
-    MultiFrame.Size = UDim2.new(1, 0, 0, 50)
+    MultiFrame.Size = UDim2.new(1, 0, 0, 50 + (#options - 1) * 25)
     MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     MultiFrame.BorderSizePixel = 1
     MultiFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -312,8 +349,8 @@ function StarClientGui:AddMultiOptionToContainer(container, funcName, options, c
     MultiName.Parent = MultiFrame
     
     local OptionsContainer = Instance.new("Frame")
-    OptionsContainer.Size = UDim2.new(1, -20, 0, 20)
-    OptionsContainer.Position = UDim2.new(0, 10, 0, 25)
+    OptionsContainer.Size = UDim2.new(1, -20, 0, #options * 25)
+    OptionsContainer.Position = UDim2.new(0, 10, 0, 30)
     OptionsContainer.BackgroundTransparency = 1
     OptionsContainer.Parent = MultiFrame
     
@@ -322,6 +359,7 @@ function StarClientGui:AddMultiOptionToContainer(container, funcName, options, c
     UIGridLayout.CellPadding = UDim2.new(0, 5, 0, 5)
     UIGridLayout.Parent = OptionsContainer
     
+    local selectedOptions = {}
     for _, option in ipairs(options) do
         local OptionButton = Instance.new("TextButton")
         OptionButton.Size = UDim2.new(0, 80, 0, 20)
@@ -337,14 +375,15 @@ function StarClientGui:AddMultiOptionToContainer(container, funcName, options, c
         OptionCorner.Parent = OptionButton
         
         OptionButton.MouseButton1Click:Connect(function()
-            OptionButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            for _, otherButton in ipairs(OptionsContainer:GetChildren()) do
-                if otherButton:IsA("TextButton") and otherButton ~= OptionButton then
-                    otherButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-                end
+            if table.find(selectedOptions, option) then
+                OptionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                table.remove(selectedOptions, table.find(selectedOptions, option))
+            else
+                OptionButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+                table.insert(selectedOptions, option)
             end
             if callback then
-                callback(option)
+                callback(selectedOptions)
             end
         end)
     end
@@ -516,42 +555,42 @@ function StarClientGui:AddDropdownToContainer(container, funcName, options, call
         OptionButton.Parent = ListFrame
         
         OptionButton.MouseButton1Click:Connect(function()
-            DropdownName.Text = funcName .. ": " .. option
-            expanded = false
-            ListFrame.Visible = false
-            Arrow.Text = "↓"
-            ListFrame.Size = UDim2.new(1, -10, 0, 0)
-            DropdownFrame.Size = UDim2.new(1, -10, 0, 30)
-            container.Parent.Parent.CanvasSize = UDim2.new(0, 0, 0, container.Parent.Parent.UIListLayout.AbsoluteContentSize.Y + 10)
+            if table.find(selectedOptions, option) then
+                OptionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                table.remove(selectedOptions, table.find(selectedOptions, option))
+            else
+                OptionButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+                table.insert(selectedOptions, option)
+            end
             if callback then
-                callback(option)
+                callback(selectedOptions)
             end
         end)
     end
 end
 
-function StarClientGui:AddColorPickerToContainer(container, funcName, defaultColor, callback)
-    local ColorFrame = Instance.new("Frame")
-    ColorFrame.Size = UDim2.new(1, 0, 0, 30)
-    ColorFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    ColorFrame.BorderSizePixel = 1
-    ColorFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    ColorFrame.Parent = container
+function StarClientGui:AddRGBPickerToContainer(container, funcName, defaultColor, callback)
+    local RGBFrame = Instance.new("Frame")
+    RGBFrame.Size = UDim2.new(1, 0, 0, 110) -- Высота для трёх слайдеров
+    RGBFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    RGBFrame.BorderSizePixel = 1
+    RGBFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
+    RGBFrame.Parent = container
     
-    local ColorCorner = Instance.new("UICorner")
-    ColorCorner.CornerRadius = UDim.new(0, 4)
-    ColorCorner.Parent = ColorFrame
+    local RGBCorner = Instance.new("UICorner")
+    RGBCorner.CornerRadius = UDim.new(0, 4)
+    RGBCorner.Parent = RGBFrame
     
-    local ColorName = Instance.new("TextLabel")
-    ColorName.Size = UDim2.new(0.7, 0, 0, 20)
-    ColorName.Position = UDim2.new(0, 10, 0, 5)
-    ColorName.BackgroundTransparency = 1
-    ColorName.Text = funcName
-    ColorName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ColorName.TextSize = 14
-    ColorName.Font = Enum.Font.SourceSans
-    ColorName.TextXAlignment = Enum.TextXAlignment.Left
-    ColorName.Parent = ColorFrame
+    local RGBName = Instance.new("TextLabel")
+    RGBName.Size = UDim2.new(1, -20, 0, 20)
+    RGBName.Position = UDim2.new(0, 10, 0, 5)
+    RGBName.BackgroundTransparency = 1
+    RGBName.Text = funcName
+    RGBName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    RGBName.TextSize = 14
+    RGBName.Font = Enum.Font.SourceSans
+    RGBName.TextXAlignment = Enum.TextXAlignment.Left
+    RGBName.Parent = RGBFrame
     
     local ColorPreview = Instance.new("Frame")
     ColorPreview.Size = UDim2.new(0, 20, 0, 20)
@@ -559,88 +598,103 @@ function StarClientGui:AddColorPickerToContainer(container, funcName, defaultCol
     ColorPreview.BackgroundColor3 = defaultColor
     ColorPreview.BorderSizePixel = 1
     ColorPreview.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    ColorPreview.Parent = ColorFrame
+    ColorPreview.Parent = RGBFrame
     
     local ColorPreviewCorner = Instance.new("UICorner")
     ColorPreviewCorner.CornerRadius = UDim.new(0, 4)
     ColorPreviewCorner.Parent = ColorPreview
     
-    local PickerFrame = Instance.new("Frame")
-    PickerFrame.Size = UDim2.new(0, 150, 0, 150)
-    PickerFrame.Position = UDim2.new(1, -160, 0, 30)
-    PickerFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    PickerFrame.BorderSizePixel = 1
-    PickerFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    PickerFrame.Visible = false
-    PickerFrame.Parent = ColorFrame
+    local sliders = {
+        {name = "Red", value = math.floor(defaultColor.R * 255), min = 0, max = 255},
+        {name = "Green", value = math.floor(defaultColor.G * 255), min = 0, max = 255},
+        {name = "Blue", value = math.floor(defaultColor.B * 255), min = 0, max = 255}
+    }
     
-    local PickerCorner = Instance.new("UICorner")
-    PickerCorner.CornerRadius = UDim.new(0, 4)
-    PickerCorner.Parent = PickerFrame
-    
-    local Gradient = Instance.new("ImageLabel")
-    Gradient.Size = UDim2.new(1, -10, 1, -30)
-    Gradient.Position = UDim2.new(0, 5, 0, 5)
-    Gradient.BackgroundTransparency = 1
-    Gradient.Image = "rbxassetid://2594291613"
-    Gradient.Parent = PickerFrame
-    
-    local HueBar = Instance.new("Frame")
-    HueBar.Size = UDim2.new(1, -10, 0, 20)
-    HueBar.Position = UDim2.new(0, 5, 1, -25)
-    HueBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    HueBar.Parent = PickerFrame
-    
-    local HueGradient = Instance.new("UIGradient")
-    HueGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-        ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
-        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
-        ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
-        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-    })
-    HueGradient.Parent = HueBar
-    
-    local expanded = false
-    ColorPreview.MouseButton1Click:Connect(function()
-        expanded = not expanded
-        PickerFrame.Visible = expanded
-        ColorFrame.Size = expanded and UDim2.new(1, 0, 0, 180) or UDim2.new(1, 0, 0, 30)
-        container.Parent.Parent.CanvasSize = UDim2.new(0, 0, 0, container.Parent.Parent.UIListLayout.AbsoluteContentSize.Y + 10)
-    end)
-    
-    local hsv = {H = 0, S = 0, V = 1}
-    Gradient.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and expanded then
-            local mouse = UserInputService:GetMouseLocation()
-            local x = math.clamp(mouse.X - Gradient.AbsolutePosition.X, 0, Gradient.AbsoluteSize.X)
-            local y = math.clamp(mouse.Y - Gradient.AbsolutePosition.Y, 0, Gradient.AbsoluteSize.Y)
-            hsv.S = x / Gradient.AbsoluteSize.X
-            hsv.V = 1 - (y / Gradient.AbsoluteSize.Y)
-            local hueX = math.clamp(mouse.X - HueBar.AbsolutePosition.X, 0, HueBar.AbsoluteSize.X)
-            hsv.H = hueX / HueBar.AbsoluteSize.X * 360
-            local color = Color3.fromHSV(hsv.H / 360, hsv.S, hsv.V)
-            ColorPreview.BackgroundColor3 = color
-            if callback then
-                callback(color)
+    for i, slider in ipairs(sliders) do
+        local SliderName = Instance.new("TextLabel")
+        SliderName.Size = UDim2.new(0.3, 0, 0, 20)
+        SliderName.Position = UDim2.new(0, 10, 0, 30 + (i - 1) * 25)
+        SliderName.BackgroundTransparency = 1
+        SliderName.Text = slider.name
+        SliderName.TextColor3 = Color3.fromRGB(255, 255, 255)
+        SliderName.TextSize = 12
+        SliderName.Font = Enum.Font.SourceSans
+        SliderName.TextXAlignment = Enum.TextXAlignment.Left
+        SliderName.Parent = RGBFrame
+        
+        local ValueLabel = Instance.new("TextLabel")
+        ValueLabel.Size = UDim2.new(0.3, 0, 0, 20)
+        ValueLabel.Position = UDim2.new(0.7, 0, 0, 30 + (i - 1) * 25)
+        ValueLabel.BackgroundTransparency = 1
+        ValueLabel.Text = tostring(slider.value)
+        ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ValueLabel.TextSize = 12
+        ValueLabel.Font = Enum.Font.SourceSans
+        ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+        ValueLabel.Parent = RGBFrame
+        
+        local SliderBar = Instance.new("Frame")
+        SliderBar.Size = UDim2.new(0.4, 0, 0, 10)
+        SliderBar.Position = UDim2.new(0.3, 0, 0, 35 + (i - 1) * 25)
+        SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        SliderBar.Parent = RGBFrame
+        
+        local SliderBarCorner = Instance.new("UICorner")
+        SliderBarCorner.CornerRadius = UDim.new(0, 4)
+        SliderBarCorner.Parent = SliderBar
+        
+        local Fill = Instance.new("Frame")
+        Fill.Size = UDim2.new(slider.value / 255, 0, 1, 0)
+        Fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Fill.BorderSizePixel = 0
+        Fill.Parent = SliderBar
+        
+        local FillCorner = Instance.new("UICorner")
+        FillCorner.CornerRadius = UDim.new(0, 4)
+        FillCorner.Parent = Fill
+        
+        local Knob = Instance.new("Frame")
+        Knob.Size = UDim2.new(0, 14, 0, 14)
+        Knob.Position = UDim2.new(slider.value / 255, -7, 0, -2)
+        Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Knob.Parent = SliderBar
+        
+        local KnobCorner = Instance.new("UICorner")
+        KnobCorner.CornerRadius = UDim.new(0, 7)
+        KnobCorner.Parent = Knob
+        
+        local dragging = false
+        Knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
             end
-        end
-    end)
-    
-    HueBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and expanded then
-            local mouse = UserInputService:GetMouseLocation()
-            local x = math.clamp(mouse.X - HueBar.AbsolutePosition.X, 0, HueBar.AbsoluteSize.X)
-            hsv.H = x / HueBar.AbsoluteSize.X * 360
-            local color = Color3.fromHSV(hsv.H / 360, hsv.S, hsv.V)
-            ColorPreview.BackgroundColor3 = color
-            if callback then
-                callback(color)
+        end)
+        
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
             end
-        end
-    end)
+        end)
+        
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local mouseX = input.Position.X
+                local barX = SliderBar.AbsolutePosition.X
+                local barWidth = SliderBar.AbsoluteSize.X
+                local ratio = math.clamp((mouseX - barX) / barWidth, 0, 1)
+                local value = math.floor(slider.min + ratio * (slider.max - slider.min))
+                Fill.Size = UDim2.new(ratio, 0, 1, 0)
+                Knob.Position = UDim2.new(ratio, -7, 0, -2)
+                ValueLabel.Text = tostring(value)
+                slider.value = value
+                local color = Color3.fromRGB(sliders[1].value, sliders[2].value, sliders[3].value)
+                ColorPreview.BackgroundColor3 = color
+                if callback then
+                    callback(color)
+                end
+            end
+        end)
+    end
 end
 
 function StarClientGui:Destroy()
