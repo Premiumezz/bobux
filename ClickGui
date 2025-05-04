@@ -1,21 +1,17 @@
 local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-local Camera = Workspace.CurrentCamera
 local TweenService = game:GetService("TweenService")
+local TextService = game:GetService("TextService")
 
 -- Notification System
 local notifications = {}
-local function showNotification(message)
+local function showNotification(message, isEnabled)
     local NotificationGui = Instance.new("ScreenGui")
     NotificationGui.Name = "FunctionNotification"
     NotificationGui.Parent = game.CoreGui
 
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Size = UDim2.new(0, 200, 0, 50)
-    NotificationFrame.Position = UDim2.new(1, 10, 1, -60 - (#notifications * 60))
+    NotificationFrame.Position = UDim2.new(1, 10, 1, -110 - (#notifications * 60))
     NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     NotificationFrame.BorderSizePixel = 0
     NotificationFrame.Parent = NotificationGui
@@ -29,7 +25,7 @@ local function showNotification(message)
     NotificationLabel.Position = UDim2.new(0, 5, 0, 5)
     NotificationLabel.BackgroundTransparency = 1
     NotificationLabel.Text = message
-    NotificationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NotificationLabel.TextColor3 = isEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     NotificationLabel.Font = Enum.Font.SourceSans
     NotificationLabel.TextSize = 14
     NotificationLabel.TextWrapped = true
@@ -37,19 +33,19 @@ local function showNotification(message)
 
     table.insert(notifications, NotificationFrame)
 
-    local tweenIn = TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -210, 1, -60 - (#notifications * 60))})
+    local tweenIn = TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -210, 1, -110 - (#notifications * 60))})
     tweenIn:Play()
     tweenIn.Completed:Wait()
 
     wait(2)
 
-    local tweenOut = TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 10, 1, -60 - (#notifications * 60))})
+    local tweenOut = TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 10, 1, -110 - (#notifications * 60))})
     tweenOut:Play()
     tweenOut.Completed:Wait()
 
     table.remove(notifications, 1)
     for i, notif in ipairs(notifications) do
-        notif.Position = UDim2.new(1, -210, 1, -60 - (i * 60))
+        notif.Position = UDim2.new(1, -210, 1, -110 - (i * 60))
     end
     NotificationGui:Destroy()
 end
@@ -154,6 +150,101 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 8)
 ContentCorner.Parent = Content
 
+-- ArrayList Implementation
+local ArrayListGui = Instance.new("ScreenGui")
+ArrayListGui.Name = "ArrayListGui"
+ArrayListGui.Parent = game.CoreGui
+ArrayListGui.ResetOnSpawn = false
+
+local ArrayListFrame = Instance.new("Frame")
+ArrayListFrame.Size = UDim2.new(0, 150, 0, 200)
+ArrayListFrame.Position = UDim2.new(0, 10, 0.5, -100)
+ArrayListFrame.BackgroundTransparency = 1
+ArrayListFrame.BorderSizePixel = 0
+ArrayListFrame.Parent = ArrayListGui
+
+local ArrayListList = Instance.new("UIListLayout")
+ArrayListList.SortOrder = Enum.SortOrder.LayoutOrder
+ArrayListList.Padding = UDim.new(0, 5)
+ArrayListList.Parent = ArrayListFrame
+
+local ArrayListPadding = Instance.new("UIPadding")
+ArrayListPadding.PaddingTop = UDim.new(0, 5)
+ArrayListPadding.PaddingLeft = UDim.new(0, 5)
+ArrayListPadding.PaddingRight = UDim.new(0, 5)
+ArrayListPadding.Parent = ArrayListFrame
+
+-- Make ArrayList Draggable
+local arrayListDragging = false
+local arrayListDragStartPos, arrayListStartPos
+ArrayListFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        arrayListDragging = true
+        arrayListDragStartPos = input.Position
+        arrayListStartPos = ArrayListFrame.Position
+    end
+end)
+
+ArrayListFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        arrayListDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if arrayListDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - arrayListDragStartPos
+        ArrayListFrame.Position = UDim2.new(arrayListStartPos.X.Scale, arrayListStartPos.X.Offset + delta.X, arrayListStartPos.Y.Scale, arrayListStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Gradient Animation for ArrayList Text
+local enabledFunctions = {}
+local isArrayListEnabled = false
+local arrayListColor1 = Color3.fromRGB(0, 255, 50)
+local arrayListColor2 = Color3.fromRGB(255, 0, 205)
+
+local function updateArrayList()
+    for _, child in pairs(ArrayListFrame:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
+
+    local sortedFunctions = {}
+    for funcName, _ in pairs(enabledFunctions) do
+        local textBounds = TextService:GetTextSize(funcName, 16, Enum.Font.SourceSansBold, Vector2.new(math.huge, math.huge))
+        table.insert(sortedFunctions, {name = funcName, width = textBounds.X})
+    end
+    if isArrayListEnabled then
+        local textBounds = TextService:GetTextSize("ArrayList", 16, Enum.Font.SourceSansBold, Vector2.new(math.huge, math.huge))
+        table.insert(sortedFunctions, {name = "ArrayList", width = textBounds.X})
+    end
+    table.sort(sortedFunctions, function(a, b) return a.width > b.width end)
+
+    for _, func in ipairs(sortedFunctions) do
+        local funcName = func.name
+        local FuncLabel = Instance.new("TextLabel")
+        local textBounds = TextService:GetTextSize(funcName, 16, Enum.Font.SourceSansBold, Vector2.new(math.huge, math.huge))
+        FuncLabel.Size = UDim2.new(0, textBounds.X, 0, 20)
+        FuncLabel.BackgroundTransparency = 1
+        FuncLabel.Text = funcName
+        FuncLabel.TextColor3 = arrayListColor1
+        FuncLabel.Font = Enum.Font.SourceSansBold
+        FuncLabel.TextSize = 16
+        FuncLabel.TextXAlignment = Enum.TextXAlignment.Left
+        FuncLabel.Parent = ArrayListFrame
+
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new(arrayListColor1, arrayListColor2)
+        gradient.Rotation = 0
+        gradient.Parent = FuncLabel
+
+        local tween = TweenService:Create(gradient, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {Offset = Vector2.new(1, 0)})
+        tween:Play()
+    end
+end
+
 -- Tab Management
 local Tabs = {}
 local TabButtons = {}
@@ -210,17 +301,27 @@ local function createTab(name)
     end)
 end
 
+-- Create Tabs
 for _, name in ipairs({"Combat", "Movement", "Visuals", "Exploits", "Utils"}) do
     createTab(name)
 end
 
 -- Function Module
-local function createFunctionModule(tabName, funcName, defaultBind, callback, options)
+local functionModules = {}
+local function createFunctionModule(tabName, funcName, defaultBind, options)
     options = options or {}
-    local hasSlider = options.hasSlider or false
+    local sliders = options.sliders or {}
+    local hasEspToggles = options.hasEspToggles or false
+    local hasColorPicker = options.hasColorPicker or false
+    local hasDualColorPicker = options.hasDualColorPicker or false
+    local hasToggles = options.hasToggles or {}
 
     local height = 70
-    if hasSlider then height = height + 40 end
+    for _ in pairs(sliders) do height = height + 40 end
+    if hasEspToggles then height = height + 30 end
+    if hasColorPicker then height = height + 60 end
+    if hasDualColorPicker then height = height + 120 end
+    for _ in pairs(hasToggles) do height = height + 30 end
 
     local FuncFrame = Instance.new("Frame")
     FuncFrame.Size = UDim2.new(1, -10, 0, height)
@@ -258,12 +359,12 @@ local function createFunctionModule(tabName, funcName, defaultBind, callback, op
     ToggleCorner.CornerRadius = UDim.new(0, 4)
     ToggleCorner.Parent = ToggleButton
 
-    local currentBind = defaultBind
+    local currentBind = defaultBind or Enum.KeyCode.Unknown
     local BindButton = Instance.new("TextButton")
     BindButton.Size = UDim2.new(0, 60, 0, 25)
     BindButton.Position = UDim2.new(0, 5, 0, 35)
     BindButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    BindButton.Text = currentBind.Name
+    BindButton.Text = currentBind == Enum.KeyCode.Unknown and "None" or currentBind.Name
     BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     BindButton.Font = Enum.Font.SourceSans
     BindButton.TextSize = 14
@@ -281,17 +382,31 @@ local function createFunctionModule(tabName, funcName, defaultBind, callback, op
 
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if waitingForBind and not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
-            currentBind = input.KeyCode
-            BindButton.Text = currentBind.Name
+            if input.KeyCode == Enum.KeyCode.Delete then
+                currentBind = Enum.KeyCode.Unknown
+                BindButton.Text = "None"
+            else
+                currentBind = input.KeyCode
+                BindButton.Text = currentBind.Name
+            end
             waitingForBind = false
         end
     end)
 
-    local SliderValue = 0
-    if hasSlider then
+    -- Sliders
+    local sliderValues = {}
+    local sliderLabels = {}
+    local yOffset = 75
+    for sliderName, sliderConfig in pairs(sliders) do
+        local minValue = sliderConfig.min or 0
+        local maxValue = sliderConfig.max or 100
+        local defaultValue = sliderConfig.default or minValue
+        local format = sliderConfig.format or "%.1f"
+        sliderValues[sliderName] = defaultValue
+
         local SliderFrame = Instance.new("Frame")
         SliderFrame.Size = UDim2.new(1, -90, 0, 20)
-        SliderFrame.Position = UDim2.new(0, 15, 0, 65)
+        SliderFrame.Position = UDim2.new(0, 15, 0, yOffset)
         SliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         SliderFrame.Parent = FuncFrame
 
@@ -300,37 +415,38 @@ local function createFunctionModule(tabName, funcName, defaultBind, callback, op
         SliderCorner.Parent = SliderFrame
 
         local SliderBar = Instance.new("Frame")
-        SliderBar.Size = UDim2.new(0, 0, 0, 10)
+        SliderBar.Size = UDim2.new((defaultValue - minValue) / (maxValue - minValue), 0, 0, 10)
         SliderBar.Position = UDim2.new(0, 0, 0.5, -5)
-        SliderBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        SliderBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         SliderBar.Parent = SliderFrame
 
         local SliderBarCorner = Instance.new("UICorner")
         SliderBarCorner.CornerRadius = UDim.new(0, 4)
         SliderBarCorner.Parent = SliderBar
 
+        local SliderLabel = Instance.new("TextLabel")
+        SliderLabel.Size = UDim2.new(0, 80, 0, 20)
+        SliderLabel.Position = UDim2.new(0, 10, 0, yOffset - 20)
+        SliderLabel.BackgroundTransparency = 1
+        SliderLabel.Text = sliderName .. ": " .. string.format(format, defaultValue)
+        SliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        SliderLabel.Font = Enum.Font.SourceSans
+        SliderLabel.TextSize = 14
+        SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+        SliderLabel.Parent = FuncFrame
+
         local SliderDragging = false
         local SliderButton = Instance.new("TextButton")
-        SliderButton.Size = UDim2.new(0, 10, 0, 10)
-        SliderButton.Position = UDim2.new(0, 0, 0.5, -5)
-        SliderButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        SliderButton.Size = UDim2.new(0, 12, 0, 12)
+        SliderButton.Position = UDim2.new((defaultValue - minValue) / (maxValue - minValue), -6, 0.5, -6)
+        SliderButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
         SliderButton.BorderSizePixel = 0
         SliderButton.Text = ""
         SliderButton.Parent = SliderFrame
 
         local SliderButtonCorner = Instance.new("UICorner")
-        SliderButtonCorner.CornerRadius = UDim.new(0, 4)
+        SliderButtonCorner.CornerRadius = UDim.new(0, 6)
         SliderButtonCorner.Parent = SliderButton
-
-        local SliderLabel = Instance.new("TextLabel")
-        SliderLabel.Size = UDim2.new(0, 50, 0, 20)
-        SliderLabel.Position = UDim2.new(1, 20, 0, 65)
-        SliderLabel.BackgroundTransparency = 1
-        SliderLabel.Text = "0.0"
-        SliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        SliderLabel.Font = Enum.Font.SourceSans
-        SliderLabel.TextSize = 14
-        SliderLabel.Parent = FuncFrame
 
         SliderButton.MouseButton1Down:Connect(function()
             SliderDragging = true
@@ -348,309 +464,275 @@ local function createFunctionModule(tabName, funcName, defaultBind, callback, op
                 local frameX = SliderFrame.AbsolutePosition.X
                 local frameWidth = SliderFrame.AbsoluteSize.X
                 local relativeX = math.clamp((mouseX - frameX) / frameWidth, 0, 1)
-                SliderValue = math.floor(relativeX * 100)
+                sliderValues[sliderName] = minValue + (relativeX * (maxValue - minValue))
+                SliderLabel.Text = sliderName .. ": " .. string.format(format, sliderValues[sliderName])
                 SliderBar.Size = UDim2.new(relativeX, 0, 0, 10)
-                SliderButton.Position = UDim2.new(relativeX, -5, 0.5, -5)
-                SliderLabel.Text = string.format("%.1f", SliderValue) .. ".0"
+                SliderButton.Position = UDim2.new(relativeX, -6, 0.5, -6)
             end
         end)
+
+        sliderLabels[sliderName] = SliderLabel
+        yOffset = yOffset + 40
     end
 
-    ToggleButton.MouseButton1Click:Connect(function()
-        isEnabled = not isEnabled
-        ToggleButton.Text = isEnabled and "ON" or "OFF"
-        ToggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(70, 70, 70)
-        showNotification(funcName .. " was " .. (isEnabled and "Enabled" or "Disabled"))
-        if callback then
-            callback(isEnabled, SliderValue)
-        end
-    end)
+    -- ESP Toggles
+    local espSettings = {showName = false, showHealth = false, showDistance = false, showItem = false}
+    if hasEspToggles then
+        local function createToggle(label, position, settingKey)
+            local EspToggle = Instance.new("TextButton")
+            EspToggle.Size = UDim2.new(0, 80, 0, 20)
+            EspToggle.Position = position
+            EspToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            EspToggle.Text = label .. ": OFF"
+            EspToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            EspToggle.Font = Enum.Font.SourceSans
+            EspToggle.TextSize = 12
+            EspToggle.Parent = FuncFrame
 
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentBind then
-            isEnabled = not isEnabled
+            local EspToggleCorner = Instance.new("UICorner")
+            EspToggleCorner.CornerRadius = UDim.new(0, 4)
+            EspToggleCorner.Parent = EspToggle
+
+            EspToggle.MouseButton1Click:Connect(function()
+                espSettings[settingKey] = not espSettings[settingKey]
+                EspToggle.Text = label .. (espSettings[settingKey] and ": ON" or ": OFF")
+                EspToggle.BackgroundColor3 = espSettings[settingKey] and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(70, 70, 70)
+            end)
+        end
+
+        createToggle("Name", UDim2.new(0, 5, 0, yOffset), "showName")
+        createToggle("Health", UDim2.new(0, 90, 0, yOffset), "showHealth")
+        createToggle("Distance", UDim2.new(0, 175, 0, yOffset), "showDistance")
+        createToggle("Item", UDim2.new(0, 260, 0, yOffset), "showItem")
+        yOffset = yOffset + 30
+    end
+
+    -- Toggles
+    local toggleSettings = {}
+    local toggleIndex = 1
+    for toggleName, _ in pairs(hasToggles) do
+        toggleSettings[toggleName] = false
+        local Toggle = Instance.new("TextButton")
+        Toggle.Size = UDim2.new(0, 100, 0, 20)
+        Toggle.Position = UDim2.new(0, 5, 0, yOffset + ((toggleIndex - 1) * 25))
+        Toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        Toggle.Text = toggleName .. ": OFF"
+        Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Toggle.Font = Enum.Font.SourceSans
+        Toggle.TextSize = 12
+        Toggle.Parent = FuncFrame
+
+        local ToggleCorner = Instance.new("UICorner")
+        ToggleCorner.CornerRadius = UDim.new(0, 4)
+        ToggleCorner.Parent = Toggle
+
+        Toggle.MouseButton1Click:Connect(function()
+            toggleSettings[toggleName] = not toggleSettings[toggleName]
+            Toggle.Text = toggleName .. (toggleSettings[toggleName] and ": ON" or ": OFF")
+            Toggle.BackgroundColor3 = toggleSettings[toggleName] and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(70, 70, 70)
+        end)
+        toggleIndex = toggleIndex + 1
+    end
+    yOffset = yOffset + (toggleIndex - 1) * 25
+
+    -- Color Picker
+    local colorSettings = {r = 0, g = 255, b = 50}
+    local colorSettings2 = {r = 255, g = 0, b = 205}
+    local ColorCodeLabel
+    if hasColorPicker or hasDualColorPicker then
+        local function createColorSlider(label, position, colorKey, defaultValue, settingsTable)
+            local ColorFrame = Instance.new("Frame")
+            ColorFrame.Size = UDim2.new(0, 80, 0, 20)
+            ColorFrame.Position = position
+            ColorFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            ColorFrame.Parent = FuncFrame
+
+            local ColorCorner = Instance.new("UICorner")
+            ColorCorner.CornerRadius = UDim.new(0, 4)
+            ColorCorner.Parent = ColorFrame
+
+            local ColorBar = Instance.new("Frame")
+            ColorBar.Size = UDim2.new(defaultValue / 255, 0, 0, 10)
+            ColorBar.Position = UDim2.new(0, 0, 0.5, -5)
+            ColorBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+            ColorBar.Parent = ColorFrame
+
+            local ColorBarCorner = Instance.new("UICorner")
+            ColorBarCorner.CornerRadius = UDim.new(0, 4)
+            ColorBarCorner.Parent = ColorBar
+
+            local ColorDragging = false
+            local ColorButton = Instance.new("TextButton")
+            ColorButton.Size = UDim2.new(0, 10, 0, 10)
+            ColorButton.Position = UDim2.new(defaultValue / 255, -5, 0.5, -5)
+            ColorButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            ColorButton.BorderSizePixel = 0
+            ColorButton.Text = ""
+            ColorButton.Parent = ColorFrame
+
+            local ColorButtonCorner = Instance.new("UICorner")
+            ColorButtonCorner.CornerRadius = UDim.new(0, 4)
+            ColorButtonCorner.Parent = ColorButton
+
+            ColorButton.MouseButton1Down:Connect(function()
+                ColorDragging = true
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    ColorDragging = false
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if ColorDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local mouseX = input.Position.X
+                    local frameX = ColorFrame.AbsolutePosition.X
+                    local frameWidth = ColorFrame.AbsoluteSize.X
+                    local relativeX = math.clamp((mouseX - frameX) / frameWidth, 0, 1)
+                    settingsTable[colorKey] = math.floor(relativeX * 255)
+                    ColorBar.Size = UDim2.new(relativeX, 0, 0, 10)
+                    ColorButton.Position = UDim2.new(relativeX, -5, 0.5, -5)
+                    if ColorCodeLabel and settingsTable.r and settingsTable.g and settingsTable.b then
+                        ColorCodeLabel.Text = string.format("RGB: %d, %d, %d", settingsTable.r, settingsTable.g, settingsTable.b)
+                    end
+                end
+            end)
+        end
+
+        createColorSlider("R", UDim2.new(0, 5, 0, yOffset), "r", 0, colorSettings)
+        createColorSlider("G", UDim2.new(0, 95, 0, yOffset), "g", 255, colorSettings)
+        createColorSlider("B", UDim2.new(0, 185, 0, yOffset), "b", 50, colorSettings)
+
+        ColorCodeLabel = Instance.new("TextLabel")
+        ColorCodeLabel.Size = UDim2.new(0, 100, 0, 20)
+        ColorCodeLabel.Position = UDim2.new(0, 5, 0, yOffset + 30)
+        ColorCodeLabel.BackgroundTransparency = 1
+        ColorCodeLabel.Text = string.format("RGB: %d, %d, %d", colorSettings.r, colorSettings.g, colorSettings.b)
+        ColorCodeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ColorCodeLabel.Font = Enum.Font.SourceSans
+        ColorCodeLabel.TextSize = 14
+        ColorCodeLabel.Parent = FuncFrame
+
+        if hasDualColorPicker then
+            local colorPickerY2 = yOffset + 60
+            createColorSlider("R2", UDim2.new(0, 5, 0, colorPickerY2), "r", 255, colorSettings2)
+            createColorSlider("G2", UDim2.new(0, 95, 0, colorPickerY2), "g", 0, colorSettings2)
+            createColorSlider("B2", UDim2.new(0, 185, 0, colorPickerY2), "b", 205, colorSettings2)
+
+            local ColorCodeLabel2 = Instance.new("TextLabel")
+            ColorCodeLabel2.Size = UDim2.new(0, 100, 0, 20)
+            ColorCodeLabel2.Position = UDim2.new(0, 5, 0, colorPickerY2 + 30)
+            ColorCodeLabel2.BackgroundTransparency = 1
+            ColorCodeLabel2.Text = string.format("RGB: %d, %d, %d", colorSettings2.r, colorSettings2.g, colorSettings2.b)
+            ColorCodeLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ColorCodeLabel2.Font = Enum.Font.SourceSans
+            ColorCodeLabel2.TextSize = 14
+            ColorCodeLabel2.Parent = FuncFrame
+        end
+    end
+
+    local module = {
+        toggle = function(enabled)
+            isEnabled = enabled
             ToggleButton.Text = isEnabled and "ON" or "OFF"
             ToggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(70, 70, 70)
-            showNotification(funcName .. " was " .. (isEnabled and "Enabled" or "Disabled"))
-            if callback then
-                callback(isEnabled, SliderValue)
+            if isEnabled and isArrayListEnabled then
+                enabledFunctions[funcName] = true
+            else
+                enabledFunctions[funcName] = nil
+            end
+            if isArrayListEnabled then
+                updateArrayList()
+            end
+            showNotification(funcName .. " was " .. (isEnabled and "Enabled" or "Disabled"), isEnabled)
+        end,
+        isEnabled = function() return isEnabled end,
+        getSliderValues = function() return sliderValues end,
+        getEspSettings = function() return espSettings end,
+        getColorSettings = function() return colorSettings end,
+        getColorSettings2 = function() return colorSettings2 end,
+        getToggleSettings = function() return toggleSettings end,
+        setCallback = function(callback)
+            ToggleButton.MouseButton1Click:Connect(function()
+                module.toggle(not isEnabled)
+                callback(isEnabled, sliderValues, espSettings, colorSettings, colorSettings2, toggleSettings)
+            end)
+            UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentBind and currentBind ~= Enum.KeyCode.Unknown then
+                    module.toggle(not isEnabled)
+                    callback(isEnabled, sliderValues, espSettings, colorSettings, colorSettings2, toggleSettings)
+                end
+            end)
+            for sliderName, _ in pairs(sliders) do
+                sliderLabels[sliderName].Parent.InputChanged:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseMovement then
+                        callback(isEnabled, sliderValues, espSettings, colorSettings, colorSettings2, toggleSettings)
+                    end
+                end)
+            end
+            if hasEspToggles then
+                for _, child in pairs(FuncFrame:GetChildren()) do
+                    if child:IsA("TextButton") and child.Text:match(": ON") or child.Text:match(": OFF") then
+                        child.MouseButton1Click:Connect(function()
+                            callback(isEnabled, sliderValues, espSettings, colorSettings, colorSettings2, toggleSettings)
+                        end)
+                    end
+                end
+            end
+            if hasColorPicker or hasDualColorPicker then
+                for _, child in pairs(FuncFrame:GetChildren()) do
+                    if child:IsA("Frame") and child.Size == UDim2.new(0, 80, 0, 20) then
+                        child.InputChanged:Connect(function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                                callback(isEnabled, sliderValues, espSettings, colorSettings, colorSettings2, toggleSettings)
+                            end
+                        end)
+                    end
+                end
+            end
+            for toggleName, _ in pairs(hasToggles) do
+                for _, child in pairs(FuncFrame:GetChildren()) do
+                    if child:IsA("TextButton") and child.Text:match(toggleName) then
+                        child.MouseButton1Click:Connect(function()
+                            callback(isEnabled, sliderValues, espSettings, colorSettings, colorSettings2, toggleSettings)
+                        end)
+                    end
+                end
             end
         end
-    end)
+    }
+    functionModules[funcName] = module
+    return module
 end
 
--- Aimbot Implementation
-local aimbotConnection
-local fovCircle
-createFunctionModule("Combat", "Aimbot", Enum.KeyCode.Q, function(isEnabled)
-    if aimbotConnection then
-        aimbotConnection:Disconnect()
-        aimbotConnection = nil
-    end
-    if fovCircle then
-        fovCircle:Remove()
-        fovCircle = nil
-    end
-
-    if isEnabled then
-        local FOV = 30
-        local maxDistance = math.huge
-        local target = nil
-
-        fovCircle = Drawing.new("Circle")
-        fovCircle.Visible = true
-        fovCircle.Radius = (math.tan(math.rad(FOV)) * Camera.FieldOfView * Camera.ViewportSize.X) / (2 * math.tan(math.rad(Camera.FieldOfView) / 2))
-        fovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        fovCircle.Thickness = 2
-        fovCircle.Color = Color3.fromRGB(255, 255, 255)
-
-        aimbotConnection = RunService.RenderStepped:Connect(function()
-            local mousePos = UserInputService:GetMouseLocation()
-            local localPos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position
-            if not localPos then
-                fovCircle.Color = Color3.fromRGB(255, 255, 255)
-                target = nil
-                return
-            end
-
-            if target and target.Character and target.Character:FindFirstChild("Head") and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 then
-                local headPos = target.Character.Head.Position
-                local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
-                if onScreen then
-                    local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                    local fovCheck = distance * (180 / math.pi) / Camera.FieldOfView
-                    if fovCheck <= FOV then
-                        local delta = Vector2.new(screenPos.X, screenPos.Y) - mousePos
-                        mousemoverel(delta.X / 5, delta.Y / 5)
-                        fovCircle.Color = Color3.fromRGB(255, 0, 0)
-                        return
-                    else
-                        target = nil
-                    end
-                else
-                    target = nil
-                end
-            else
-                target = nil
-            end
-
-            local closestDistance = maxDistance
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                    local headPos = player.Character.Head.Position
-                    local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
-                    if onScreen then
-                        local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                        local worldDistance = (localPos - headPos).Magnitude
-                        local fovCheck = distance * (180 / math.pi) / Camera.FieldOfView
-                        if fovCheck <= FOV and worldDistance < closestDistance then
-                            closestDistance = worldDistance
-                            target = player
-                        end
-                    end
-                end
-            end
-
-            if target then
-                local headPos = target.Character.Head.Position
-                local screenPos = Camera:WorldToViewportPoint(headPos)
-                local delta = Vector2.new(screenPos.X, screenPos.Y) - mousePos
-                mousemoverel(delta.X / 5, delta.Y / 5)
-                fovCircle.Color = Color3.fromRGB(255, 0, 0)
-            else
-                fovCircle.Color = Color3.fromRGB(255, 255, 255)
-            end
-        end)
-    end
-end, {hasSlider = false})
-
--- Speed Hack
-local speedConnections = {}
-createFunctionModule("Movement", "Speed Hack", Enum.KeyCode.E, function(isEnabled, value)
-    local baseSpeed = 16
-    local speed = baseSpeed + value
-    local teleportDistance = 5
-    local teleportInterval = 0.1
-
-    for _, conn in pairs(speedConnections) do
-        if conn then conn:Disconnect() end
-    end
-    speedConnections = {}
-
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = isEnabled and speed or baseSpeed
-    end
-
-    if isEnabled then
-        local function teleportInDirection(direction)
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local rootPart = LocalPlayer.Character.HumanoidRootPart
-                rootPart.CFrame = rootPart.CFrame + (direction * teleportDistance)
-            end
-        end
-
-        local keysDown = {}
-        local function onInputBegan(input, gameProcessed)
-            if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.W then
-                    keysDown.W = true
-                elseif input.KeyCode == Enum.KeyCode.A then
-                    keysDown.A = true
-                elseif input.KeyCode == Enum.KeyCode.S then
-                    keysDown.S = true
-                elseif input.KeyCode == Enum.KeyCode.D then
-                    keysDown.D = true
-                end
-            end
-        end
-
-        local function onInputEnded(input, gameProcessed)
-            if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.W then
-                    keysDown.W = false
-                elseif input.KeyCode == Enum.KeyCode.A then
-                    keysDown.A = false
-                elseif input.KeyCode == Enum.KeyCode.S then
-                    keysDown.S = false
-                elseif input.KeyCode == Enum.KeyCode.D then
-                    keysDown.D = false
-                end
-            end
-        end
-
-        table.insert(speedConnections,ijections, UserInputService.InputBegan:Connect(onInputBegan))
-        table.insert(speedConnections, UserInputService.InputEnded:Connect(onInputEnded))
-
-        local lastTeleport = tick()
-        table.insert(speedConnections, RunService.RenderStepped:Connect(function()
-            if tick() - lastTeleport >= teleportInterval then
-                local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if not rootPart then return end
-
-                local direction = Vector3.new()
-                if keysDown.W then direction = direction + rootPart.CFrame.LookVector end
-                if keysDown.S then direction = direction - rootPart.CFrame.LookVector end
-                if keysDown.A then direction = direction - rootPart.CFrame.RightVector end
-                if keysDown.D then direction = direction + rootPart.CFrame.RightVector end
-
-                if direction.Magnitude > 0 then
-                    teleportInDirection(direction.Unit)
-                    lastTeleport = tick()
-                end
-            end
-        end))
-    end
-end, {hasSlider = true})
-
--- Fly Implementation
-local flyConnection
-createFunctionModule("Movement", "Fly", Enum.KeyCode.F, function(isEnabled, speed)
-    if flyConnection then
-        flyConnection:Disconnect()
-        flyConnection = nil
-    end
-
-    if isEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local rootPart = LocalPlayer.Character.HumanoidRootPart
-        local humanoid = LocalPlayer.Character.Humanoid
-        humanoid.PlatformStand = true
-
-        local bodyVelocity
-        if not rootPart:FindFirstChild("FlyVelocity") then
-            bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.Name = "FlyVelocity"
-            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.Parent = rootPart
-        else
-            bodyVelocity = rootPart:FindFirstChild("FlyVelocity")
-        end
-
-        flyConnection = RunService.RenderStepped:Connect(function(deltaTime)
-            local moveDirection = Vector3.new()
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                moveDirection = Camera.CFrame.LookVector
-            end
-
-            bodyVelocity.Velocity = moveDirection * (speed + 20)
-        end)
-
-        table.insert(speedConnections, UserInputService.InputEnded:Connect(function(input)
-            if input.KeyCode == Enum.KeyCode.W and bodyVelocity then
-                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            end
-        end))
-    else
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.PlatformStand = false
-            local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if rootPart and rootPart:FindFirstChild("FlyVelocity") then
-                rootPart.FlyVelocity:Destroy()
-            end
-        end
-    end
-end, {hasSlider = true})
-
--- Noclip
-createFunctionModule("Exploits", "Noclip", Enum.KeyCode.T, function(isEnabled)
-    local noclipConnection
-    if isEnabled then
-        noclipConnection = RunService.Stepped:Connect(function()
-            if LocalPlayer.Character then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-    else
-        if noclipConnection then
-            noclipConnection:Disconnect()
-        end
-        if LocalPlayer.Character then
-            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-end, {hasSlider = false})
-
--- Unhook
-createFunctionModule("Utils", "Unhook", Enum.KeyCode.F, function(isEnabled)
-    if isEnabled then
-        ScreenGui:Destroy()
-        if aimbotConnection then
-            aimbotConnection:Disconnect()
-        end
-        if fovCircle then
-            fovCircle:Remove()
-        end
-        if flyConnection then
-            flyConnection:Disconnect()
-        end
-        for _, conn in pairs(speedConnections) do
-            if conn then conn:Disconnect() end
-        end
-        print("Unhooked Xeno GUI")
-    end
-end, {hasSlider = false})
-
--- Toggle GUI
+-- API to toggle GUI visibility
 local guiVisible = false
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.RightControl then
-        guiVisible = not guiVisible
-        MainFrame.Visible = guiVisible
-        if guiVisible and not CurrentTab then
-            CurrentTab = "Combat"
-            Tabs["Combat"].Visible = true
-            TabButtons["Combat"].BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        end
+local function toggleGui()
+    guiVisible = not guiVisible
+    MainFrame.Visible = guiVisible
+    if guiVisible and not CurrentTab then
+        CurrentTab = "Combat"
+        Tabs["Combat"].Visible = true
+        TabButtons["Combat"].BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     end
-end)
+end
 
-showNotification("CrazyHueta ClickGUI Injected!")
-print("Xeno ClickGUI Loaded. Press RCTRL to toggle.")
+-- Expose API
+return {
+    createFunctionModule = createFunctionModule,
+    toggleGui = toggleGui,
+    setArrayListColors = function(color1, color2)
+        arrayListColor1 = color1
+        arrayListColor2 = color2
+        updateArrayList()
+    end,
+    setArrayListEnabled = function(enabled)
+        isArrayListEnabled = enabled
+        ArrayListFrame.Visible = enabled
+        updateArrayList()
+    end,
+    getFunctionModule = function(funcName)
+        return functionModules[funcName]
+    end
+}
