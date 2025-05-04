@@ -160,7 +160,8 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     if not TabFrame then return end
     
     local FuncFrame = Instance.new("Frame")
-    FuncFrame.Size = UDim2.new(1, -10, 0, 50)
+    FuncFrame.Size = UDim2.new(1, -30, 0, 50) -- Narrower by 20 pixels (10 on each side)
+    FuncFrame.Position = UDim2.new(0, 10, 0, 10) -- Left and top padding of 10 pixels
     FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     FuncFrame.BorderSizePixel = 1
     FuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -192,77 +193,108 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     ToggleCorner.CornerRadius = UDim.new(0, 4)
     ToggleCorner.Parent = Toggle
     
-    local enabled = false
-    Toggle.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
-        if callback then
-            callback(enabled)
-        end
-    end)
+    -- Container for sub-elements
+    local SubContainer = Instance.new("Frame")
+    SubContainer.Size = UDim2.new(1, -10, 0, 0) -- Height will be adjusted dynamically
+    SubContainer.Position = UDim2.new(0, 5, 0, 30) -- Position below the toggle
+    SubContainer.BackgroundTransparency = 1
+    SubContainer.Visible = false
+    SubContainer.Parent = FuncFrame
     
-    TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
-end
-
-function StarClientGui:AddSubFunction(tabName, funcName, subFuncName, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
-    
-    local FuncFrame = Instance.new("Frame")
-    FuncFrame.Size = UDim2.new(1, -10, 0, 30)
-    FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    FuncFrame.BorderSizePixel = 1
-    FuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    FuncFrame.Parent = TabFrame
-    
-    local FuncCorner = Instance.new("UICorner")
-    FuncCorner.CornerRadius = UDim.new(0, 4)
-    FuncCorner.Parent = FuncFrame
-    
-    local FuncName = Instance.new("TextLabel")
-    FuncName.Size = UDim2.new(0.7, 0, 0, 20)
-    FuncName.Position = UDim2.new(0, 10, 0, 5)
-    FuncName.BackgroundTransparency = 1
-    FuncName.Text = subFuncName
-    FuncName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FuncName.TextSize = 14
-    FuncName.Font = Enum.Font.SourceSans
-    FuncName.TextXAlignment = Enum.TextXAlignment.Left
-    FuncName.Parent = FuncFrame
-    
-    local Toggle = Instance.new("TextButton")
-    Toggle.Size = UDim2.new(0, 20, 0, 20)
-    Toggle.Position = UDim2.new(1, -30, 0, 5)
-    Toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    Toggle.Text = ""
-    Toggle.Parent = FuncFrame
-    
-    local ToggleCorner = Instance.new("UICorner")
-    ToggleCorner.CornerRadius = UDim.new(0, 4)
-    ToggleCorner.Parent = Toggle
+    local SubUIListLayout = Instance.new("UIListLayout")
+    SubUIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SubUIListLayout.Padding = UDim.new(0, 5)
+    SubUIListLayout.Parent = SubContainer
     
     local enabled = false
     Toggle.MouseButton1Click:Connect(function()
         enabled = not enabled
         Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
+        SubContainer.Visible = enabled
+        FuncFrame.Size = enabled and UDim2.new(1, -30, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(1, -30, 0, 50)
+        TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
         if callback then
             callback(enabled)
         end
     end)
     
+    -- Add sub-elements to SubContainer
+    self:AddSubFunctionToContainer(SubContainer, "SubTest1", function(subEnabled)
+        print("SubTest1 is " .. (subEnabled and "enabled" or "disabled"))
+    end)
+    
+    self:AddMultiOptionToContainer(SubContainer, "MultiTest", {"Option1", "Option2", "Option3"}, function(option)
+        print("MultiTest selected: " .. option)
+    end)
+    
+    self:AddSliderToContainer(SubContainer, "SliderTest", 0, 100, 50, function(value)
+        print("SliderTest value: " .. value)
+    end)
+    
+    self:AddDropdownToContainer(SubContainer, "DropdownTest", {"Choice1", "Choice2", "Choice3"}, function(choice)
+        print("DropdownTest selected: " .. choice)
+    end)
+    
+    self:AddColorPickerToContainer(SubContainer, "ColorTest", Color3.fromRGB(255, 0, 0), function(color)
+        print("ColorTest selected: " .. tostring(color))
+    end)
+    
+    -- Adjust initial height
+    FuncFrame.Size = UDim2.new(1, -30, 0, 50)
     TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
-function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
+function StarClientGui:AddSubFunctionToContainer(container, subFuncName, callback)
+    local SubFuncFrame = Instance.new("Frame")
+    SubFuncFrame.Size = UDim2.new(1, 0, 0, 30)
+    SubFuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    SubFuncFrame.BorderSizePixel = 1
+    SubFuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
+    SubFuncFrame.Parent = container
     
+    local SubFuncCorner = Instance.new("UICorner")
+    SubFuncCorner.CornerRadius = UDim.new(0, 4)
+    SubFuncCorner.Parent = SubFuncFrame
+    
+    local SubFuncName = Instance.new("TextLabel")
+    SubFuncName.Size = UDim2.new(0.7, 0, 0, 20)
+    SubFuncName.Position = UDim2.new(0, 10, 0, 5)
+    SubFuncName.BackgroundTransparency = 1
+    SubFuncName.Text = subFuncName
+    SubFuncName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SubFuncName.TextSize = 14
+    SubFuncName.Font = Enum.Font.SourceSans
+    SubFuncName.TextXAlignment = Enum.TextXAlignment.Left
+    SubFuncName.Parent = SubFuncFrame
+    
+    local SubToggle = Instance.new("TextButton")
+    SubToggle.Size = UDim2.new(0, 20, 0, 20)
+    SubToggle.Position = UDim2.new(1, -30, 0, 5)
+    SubToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    SubToggle.Text = ""
+    SubToggle.Parent = SubFuncFrame
+    
+    local SubToggleCorner = Instance.new("UICorner")
+    SubToggleCorner.CornerRadius = UDim.new(0, 4)
+    SubToggleCorner.Parent = SubToggle
+    
+    local enabled = false
+    SubToggle.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        SubToggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
+        if callback then
+            callback(enabled)
+        end
+    end)
+end
+
+function StarClientGui:AddMultiOptionToContainer(container, funcName, options, callback)
     local MultiFrame = Instance.new("Frame")
-    MultiFrame.Size = UDim2.new(1, -10, 0, 50)
+    MultiFrame.Size = UDim2.new(1, 0, 0, 50)
     MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     MultiFrame.BorderSizePixel = 1
     MultiFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    MultiFrame.Parent = TabFrame
+    MultiFrame.Parent = container
     
     local MultiCorner = Instance.new("UICorner")
     MultiCorner.CornerRadius = UDim.new(0, 4)
@@ -316,20 +348,15 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
             end
         end)
     end
-    
-    TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
-function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
-    
+function StarClientGui:AddSliderToContainer(container, funcName, min, max, default, callback)
     local SliderFrame = Instance.new("Frame")
-    SliderFrame.Size = UDim2.new(1, -10, 0, 50)
+    SliderFrame.Size = UDim2.new(1, 0, 0, 50)
     SliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     SliderFrame.BorderSizePixel = 1
     SliderFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    SliderFrame.Parent = TabFrame
+    SliderFrame.Parent = container
     
     local SliderCorner = Instance.new("UICorner")
     SliderCorner.CornerRadius = UDim.new(0, 4)
@@ -416,20 +443,15 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
             end
         end
     end)
-    
-    TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
-function StarClientGui:AddDropdown(tabName, funcName, options, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
-    
+function StarClientGui:AddDropdownToContainer(container, funcName, options, callback)
     local DropdownFrame = Instance.new("Frame")
-    DropdownFrame.Size = UDim2.new(1, -10, 0, 30)
+    DropdownFrame.Size = UDim2.new(1, 0, 0, 30)
     DropdownFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     DropdownFrame.BorderSizePixel = 1
     DropdownFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    DropdownFrame.Parent = TabFrame
+    DropdownFrame.Parent = container
     
     local DropdownCorner = Instance.new("UICorner")
     DropdownCorner.CornerRadius = UDim.new(0, 4)
@@ -480,7 +502,7 @@ function StarClientGui:AddDropdown(tabName, funcName, options, callback)
         Arrow.Text = expanded and "↑" or "↓"
         ListFrame.Size = expanded and UDim2.new(1, -10, 0, #options * 25) or UDim2.new(1, -10, 0, 0)
         DropdownFrame.Size = expanded and UDim2.new(1, -10, 0, 30 + #options * 25) or UDim2.new(1, -10, 0, 30)
-        TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+        container.Parent.Parent.CanvasSize = UDim2.new(0, 0, 0, container.Parent.Parent.UIListLayout.AbsoluteContentSize.Y + 10)
     end)
     
     for _, option in ipairs(options) do
@@ -500,26 +522,21 @@ function StarClientGui:AddDropdown(tabName, funcName, options, callback)
             Arrow.Text = "↓"
             ListFrame.Size = UDim2.new(1, -10, 0, 0)
             DropdownFrame.Size = UDim2.new(1, -10, 0, 30)
-            TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+            container.Parent.Parent.CanvasSize = UDim2.new(0, 0, 0, container.Parent.Parent.UIListLayout.AbsoluteContentSize.Y + 10)
             if callback then
                 callback(option)
             end
         end)
     end
-    
-    TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
-function StarClientGui:AddColorPicker(tabName, funcName, defaultColor, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
-    
+function StarClientGui:AddColorPickerToContainer(container, funcName, defaultColor, callback)
     local ColorFrame = Instance.new("Frame")
-    ColorFrame.Size = UDim2.new(1, -10, 0, 30)
+    ColorFrame.Size = UDim2.new(1, 0, 0, 30)
     ColorFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     ColorFrame.BorderSizePixel = 1
     ColorFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    ColorFrame.Parent = TabFrame
+    ColorFrame.Parent = container
     
     local ColorCorner = Instance.new("UICorner")
     ColorCorner.CornerRadius = UDim.new(0, 4)
@@ -590,8 +607,8 @@ function StarClientGui:AddColorPicker(tabName, funcName, defaultColor, callback)
     ColorPreview.MouseButton1Click:Connect(function()
         expanded = not expanded
         PickerFrame.Visible = expanded
-        ColorFrame.Size = expanded and UDim2.new(1, -10, 0, 180) or UDim2.new(1, -10, 0, 30)
-        TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+        ColorFrame.Size = expanded and UDim2.new(1, 0, 0, 180) or UDim2.new(1, 0, 0, 30)
+        container.Parent.Parent.CanvasSize = UDim2.new(0, 0, 0, container.Parent.Parent.UIListLayout.AbsoluteContentSize.Y + 10)
     end)
     
     local hsv = {H = 0, S = 0, V = 1}
@@ -624,8 +641,6 @@ function StarClientGui:AddColorPicker(tabName, funcName, defaultColor, callback)
             end
         end
     end)
-    
-    TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
 end
 
 function StarClientGui:Destroy()
