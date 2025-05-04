@@ -12,7 +12,7 @@ StarClientGui.__index = StarClientGui
 
 -- Create new ClickGui instance
 function StarClientGui.new()
-    local UserInputService = game:GetService("UserInputService") -- Инициализация здесь
+    local UserInputService = game:GetService("UserInputService")
     local self = setmetatable({}, StarClientGui)
     
     -- ScreenGui Setup for ClickGui
@@ -28,7 +28,13 @@ function StarClientGui.new()
     NotificationGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     NotificationGui.ResetOnSpawn = false
     
-    -- Инициализация notificationManager с отдельным ScreenGui
+    -- Separate ScreenGui for ArrayList
+    self.ArrayListGui = Instance.new("ScreenGui")
+    self.ArrayListGui.Name = "StarClientArrayList"
+    self.ArrayListGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    self.ArrayListGui.ResetOnSpawn = false
+    
+    -- Инициализация notificationManager
     notificationManager = Notifications.new(NotificationGui)
     
     -- Main Frame (Dark Gray with Rounded Corners)
@@ -104,7 +110,7 @@ function StarClientGui.new()
     self.Tabs = {}
     self.TabButtons = {}
     self.CurrentTab = nil
-    self.Functions = {} -- Для отслеживания функций
+    self.Functions = {}
     
     local tabNames = {"Combat", "Movement", "Visuals", "Exploits", "Utils"}
     for i, tabName in ipairs(tabNames) do
@@ -182,9 +188,9 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     
     local firstFunction = #self.Functions[tabName] == 0
     local FuncFrame = Instance.new("Frame")
-    FuncFrame.Name = funcName .. "Frame" -- Уникальное имя для поиска
+    FuncFrame.Name = funcName .. "Frame"
     FuncFrame.Size = UDim2.new(0.8, 0, 0, 50)
-    FuncFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
+    FuncFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
     FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     FuncFrame.BorderSizePixel = 1
     FuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -217,9 +223,9 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     BindLabel.Parent = FuncFrame
     
     local BindButton = Instance.new("TextButton")
-    BindButton.Name = "BindButton" -- Имя для поиска
+    BindButton.Name = "BindButton"
     BindButton.Size = UDim2.new(0.15, 0, 0, 20)
-    BindButton.Position = UDim2.new(0.85, 0, 0, 5) -- Правый угол
+    BindButton.Position = UDim2.new(0.85, 0, 0, 5)
     BindButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     BindButton.Text = "None"
     BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -232,7 +238,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     BindCorner.Parent = BindButton
     
     local Toggle = Instance.new("TextButton")
-    Toggle.Name = "Toggle" -- Имя для поиска
+    Toggle.Name = "Toggle"
     Toggle.Size = UDim2.new(0, 20, 0, 20)
     Toggle.Position = UDim2.new(0.4, 0, 0, 5)
     Toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
@@ -243,7 +249,6 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
     ToggleCorner.CornerRadius = UDim.new(0, 4)
     ToggleCorner.Parent = Toggle
     
-    -- Container for sub-elements
     local SubContainer = Instance.new("Frame")
     SubContainer.Size = UDim2.new(1, -10, 0, 0)
     SubContainer.Position = UDim2.new(0, 5, 0, 30)
@@ -317,7 +322,7 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
     local SliderFrame = Instance.new("Frame")
     SliderFrame.Name = funcName .. "Frame"
     SliderFrame.Size = UDim2.new(0.8, 0, 0, 50)
-    SliderFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
+    SliderFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
     SliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     SliderFrame.BorderSizePixel = 1
     SliderFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -418,7 +423,7 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback)
     local RGBFrame = Instance.new("Frame")
     RGBFrame.Name = funcName .. "Frame"
     RGBFrame.Size = UDim2.new(0.8, 0, 0, 110)
-    RGBFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
+    RGBFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
     RGBFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     RGBFrame.BorderSizePixel = 1
     RGBFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -552,7 +557,7 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
     local MultiFrame = Instance.new("Frame")
     MultiFrame.Name = funcName .. "Frame"
     MultiFrame.Size = UDim2.new(0.8, 0, 0, 50 + (#options - 1) * 25)
-    MultiFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0) -- Отступ 10 пикселей для первой функции
+    MultiFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
     MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     MultiFrame.BorderSizePixel = 1
     MultiFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
@@ -616,7 +621,7 @@ end
 
 function StarClientGui:Destroy()
     self.ScreenGui:Destroy()
-    -- Уничтожаем NotificationGui
+    self.ArrayListGui:Destroy()
     local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     local notificationGui = playerGui:FindFirstChild("StarClientNotifications")
     if notificationGui then
