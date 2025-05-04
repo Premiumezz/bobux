@@ -1,1 +1,153 @@
-s
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "StarClientGui"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Main Frame (Dark Gray Square)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = gui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 10)
+mainCorner.Parent = mainFrame
+
+-- Sidebar (Darker Rectangle)
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0, 120, 1, 0)
+sidebar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+sidebar.BorderSizePixel = 0
+sidebar.Parent = mainFrame
+
+local sidebarCorner = Instance.new("UICorner")
+sidebarCorner.CornerRadius = UDim.new(0, 10)
+sidebarCorner.Parent = sidebar
+
+-- Title (StarClient, Draggable)
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 10)
+title.BackgroundTransparency = 1
+title.Text = "StarClient"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 18
+title.Font = Enum.Font.SourceSansBold
+title.Parent = sidebar
+
+-- Dragging Logic
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+title.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Tabs
+local tabs = {"Combat", "Movement", "Visuals", "Exploits", "Utils"}
+local activeTab = tabs[1]
+local tabButtons = {}
+local tabOffsetY = 50
+
+for i, tabName in ipairs(tabs) do
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -10, 0, 30)
+    button.Position = UDim2.new(0, 5, 0, tabOffsetY)
+    button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    button.Text = tabName
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 16
+    button.Font = Enum.Font.SourceSans
+    button.BorderSizePixel = 0
+    button.Parent = sidebar
+
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 5)
+    buttonCorner.Parent = button
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.Color = tabName == activeTab and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = button
+
+    tabButtons[tabName] = {button = button, stroke = stroke}
+
+    -- Button Click Animation
+    button.MouseButton1Click:Connect(function()
+        activeTab = tabName
+        for name, data in pairs(tabButtons) do
+            data.stroke.Color = name == activeTab and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+        end
+
+        local tween = TweenService:Create(
+            button,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+            {BackgroundColor3 = Color3.fromRGB(20, 20, 20)}
+        )
+        tween:Play()
+        tween.Completed:Connect(function()
+            TweenService:Create(
+                button,
+                TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}
+            ):Play()
+        end)
+    end)
+
+    tabOffsetY = tabOffsetY + 40
+end
+
+-- GUI Toggle (Insert Key)
+gui.Enabled = false
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Insert then
+        gui.Enabled = not gui.Enabled
+        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+        local goal = gui.Enabled and {BackgroundTransparency = 0} or {BackgroundTransparency = 1}
+        TweenService:Create(mainFrame, tweenInfo, goal):Play()
+    end
+end)
+
+-- Load Functions from GitHub
+local success, response = pcall(function()
+    return HttpService:GetAsync("https://raw.githubusercontent.com/Premiumezz/bobux/refs/heads/main/clickgui")
+end)
+
+if success then
+    loadstring(response)()
+else
+    warn("Failed to load functions from GitHub: " .. tostring(response))
+end
