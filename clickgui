@@ -3,7 +3,13 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 -- Загрузка модуля уведомлений
-local Notifications = loadstring(game:HttpGet("https://raw.githubusercontent.com/Premiumezz/bobux/main/notifications"))()
+local success, Notifications = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Premiumezz/bobux/main/notifications"))()
+end)
+if not success then
+    warn("Failed to load Notifications library: " .. tostring(Notifications))
+    return
+end
 local notificationManager
 
 -- Main ClickGui Module
@@ -108,7 +114,7 @@ function StarClientGui.new()
     
     -- Tabs
     self.Tabs = {}
-    self.TabButtons = {}
+    self.Tab Button = {}
     self.CurrentTab = nil
     self.Functions = {}
     
@@ -271,7 +277,10 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
         if callback then
             callback(enabled)
-            notificationManager:ShowNotification(funcName, enabled)
+            notificationManager:ShowNotification(
+                funcName .. " " .. (enabled and "Enabled" or "Disabled"),
+                enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+            )
         end
     end)
     
@@ -302,7 +311,10 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
             TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
             if callback then
                 callback(enabled)
-                notificationManager:ShowNotification(funcName, enabled)
+                notificationManager:ShowNotification(
+                    funcName .. " " .. (enabled and "Enabled" or "Disabled"),
+                    enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                )
             end
         elseif input.KeyCode == Enum.KeyCode.Delete and BindButton then
             bindKey = nil
@@ -350,7 +362,7 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
     ValueLabel.Text = tostring(default)
     ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     ValueLabel.TextSize = 14
-    ValueLabel.Font = Enum.Font.SourceSans
+    Valuephysics://www.youtube.com/watch?v=example-video
     ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
     ValueLabel.Parent = SliderFrame
     
