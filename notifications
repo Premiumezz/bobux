@@ -10,65 +10,50 @@ function Notifications.new(screenGui)
     self.ScreenGui.Name = "StarClientNotifications"
     self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     self.ScreenGui.ResetOnSpawn = false
+    self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     self.Notifications = {}
     return self
 end
 
-function Notifications:ShowNotification(text, enabled)
+function Notifications:ShowNotification(text, color)
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Size = UDim2.new(0, 300, 0, 60)
     NotificationFrame.Position = UDim2.new(1, -310, 1, -70 - (#self.Notifications * 70))
-    NotificationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     NotificationFrame.BorderSizePixel = 0
+    NotificationFrame.ZIndex = 10
     NotificationFrame.Parent = self.ScreenGui
-
-    -- Тень
-    local Shadow = Instance.new("UIStroke")
-    Shadow.Thickness = 2
-    Shadow.Color = Color3.fromRGB(0, 0, 0)
-    Shadow.Transparency = 0.5
-    Shadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    Shadow.Parent = NotificationFrame
-
-    -- Градиент
-    local Gradient = Instance.new("UIGradient")
-    Gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
-    }
-    Gradient.Rotation = 45
-    Gradient.Parent = NotificationFrame
 
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 8)
     Corner.Parent = NotificationFrame
 
+    local Border = Instance.new("UIStroke")
+    Border.Color = color or Color3.fromRGB(255, 255, 255)
+    Border.Thickness = 2
+    Border.Parent = NotificationFrame
+
     local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -20, 0, 30)
-    Title.Position = UDim2.new(0, 10, 0, 5)
+    Title.Size = UDim2.new(1, -20, 1, 0)
+    Title.Position = UDim2.new(0, 10, 0, 0)
     Title.BackgroundTransparency = 1
     Title.Text = text
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.TextSize = 20
-    Title.Font = Enum.Font.GothamBold
+    Title.Font = Enum.Font.SourceSansBold
     Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextTransparency = 0
+    Title.ZIndex = 11
     Title.Parent = NotificationFrame
 
-    local Status = Instance.new("TextLabel")
-    Status.Size = UDim2.new(1, -20, 0, 20)
-    Status.Position = UDim2.new(0, 10, 0, 35)
-    Status.BackgroundTransparency = 1
-    Status.Text = enabled and "Enabled" or "Disabled"
-    Status.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    Status.TextSize = 14
-    Status.Font = Enum.Font.Gotham
-    Status.TextXAlignment = Enum.TextXAlignment.Left
-    Status.Parent = NotificationFrame
+    local Shadow = Instance.new("UIStroke")
+    Shadow.Color = Color3.fromRGB(0, 0, 0)
+    Shadow.Thickness = 1
+    Shadow.Transparency = 0.5
+    Shadow.Parent = NotificationFrame
 
     table.insert(self.Notifications, NotificationFrame)
 
-    -- Анимация появления
-    NotificationFrame.Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))
     local tweenIn = TweenService:Create(
         NotificationFrame,
         TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -87,8 +72,7 @@ function Notifications:ShowNotification(text, enabled)
         tweenOut.Completed:Wait()
         NotificationFrame:Destroy()
         table.remove(self.Notifications, table.find(self.Notifications, NotificationFrame))
-
-        -- Обновление позиций оставшихся уведомлений
+        
         for i, frame in ipairs(self.Notifications) do
             local tween = TweenService:Create(
                 frame,
