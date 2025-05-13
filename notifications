@@ -14,55 +14,86 @@ function Notifications.new(screenGui)
     return self
 end
 
-function Notifications:ShowNotification(text)
+function Notifications:ShowNotification(text, enabled)
     local NotificationFrame = Instance.new("Frame")
-    NotificationFrame.Size = UDim2.new(0, 300, 0, 50)
-    NotificationFrame.Position = UDim2.new(1, -310, 1, -60 - (#self.Notifications * 60))
-    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NotificationFrame.Size = UDim2.new(0, 300, 0, 60)
+    NotificationFrame.Position = UDim2.new(1, -310, 1, -70 - (#self.Notifications * 70))
+    NotificationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     NotificationFrame.BorderSizePixel = 0
     NotificationFrame.Parent = self.ScreenGui
 
+    -- Тень
+    local Shadow = Instance.new("UIStroke")
+    Shadow.Thickness = 2
+    Shadow.Color = Color3.fromRGB(0, 0, 0)
+    Shadow.Transparency = 0.5
+    Shadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    Shadow.Parent = NotificationFrame
+
+    -- Градиент
+    local Gradient = Instance.new("UIGradient")
+    Gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+    }
+    Gradient.Rotation = 45
+    Gradient.Parent = NotificationFrame
+
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 4)
+    Corner.CornerRadius = UDim.new(0, 8)
     Corner.Parent = NotificationFrame
 
     local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -10, 1, 0)
-    Title.Position = UDim2.new(0, 5, 0, 0)
+    Title.Size = UDim2.new(1, -20, 0, 30)
+    Title.Position = UDim2.new(0, 10, 0, 5)
     Title.BackgroundTransparency = 1
     Title.Text = text
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 18
-    Title.Font = Enum.Font.SourceSans
+    Title.TextSize = 20
+    Title.Font = Enum.Font.GothamBold
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = NotificationFrame
 
+    local Status = Instance.new("TextLabel")
+    Status.Size = UDim2.new(1, -20, 0, 20)
+    Status.Position = UDim2.new(0, 10, 0, 35)
+    Status.BackgroundTransparency = 1
+    Status.Text = enabled and "Enabled" or "Disabled"
+    Status.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    Status.TextSize = 14
+    Status.Font = Enum.Font.Gotham
+    Status.TextXAlignment = Enum.TextXAlignment.Left
+    Status.Parent = NotificationFrame
+
     table.insert(self.Notifications, NotificationFrame)
 
+    -- Анимация появления
+    NotificationFrame.Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))
     local tweenIn = TweenService:Create(
         NotificationFrame,
-        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {Position = UDim2.new(1, -310, 1, -60 - (#self.Notifications * 60))}
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Position = UDim2.new(1, -310, 1, -70 - (#self.Notifications * 70))}
     )
     tweenIn:Play()
 
     spawn(function()
-        wait(3)
+        wait(4)
         local tweenOut = TweenService:Create(
             NotificationFrame,
-            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            {Position = UDim2.new(1, 0, 1, -60 - (#self.Notifications * 60))}
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+            {Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))}
         )
         tweenOut:Play()
         tweenOut.Completed:Wait()
         NotificationFrame:Destroy()
         table.remove(self.Notifications, table.find(self.Notifications, NotificationFrame))
-        
+
+        -- Обновление позиций оставшихся уведомлений
         for i, frame in ipairs(self.Notifications) do
             local tween = TweenService:Create(
                 frame,
                 TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Position = UDim2.new(1, -310, 1, -60 - (i * 60))}
+                {Position = UDim2.new(1, -310, 1, -70 - (i * 70))}
             )
             tween:Play()
         end
