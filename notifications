@@ -18,11 +18,12 @@ end
 function Notifications:ShowNotification(text, color)
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Size = UDim2.new(0, 300, 0, 60)
-    NotificationFrame.Position = UDim2.new(1, -310, 1, -70 - (#self.Notifications * 70))
+    NotificationFrame.Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))
     NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     NotificationFrame.BorderSizePixel = 0
     NotificationFrame.ZIndex = 10
     NotificationFrame.Parent = self.ScreenGui
+    NotificationFrame.ClipsDescendants = true
 
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 8)
@@ -69,22 +70,30 @@ function Notifications:ShowNotification(text, color)
             {Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))}
         )
         tweenOut:Play()
-        tweenOut.Completed:Wait()
-        NotificationFrame:Destroy()
-        table.remove(self.Notifications, table.find(self.Notifications, NotificationFrame))
-        
-        for i, frame in ipairs(self.Notifications) do
-            local tween = TweenService:Create(
-                frame,
-                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Position = UDim2.new(1, -310, 1, -70 - (i * 70))}
-            )
-            tween:Play()
-        end
+        tweenOut.Completed:Connect(function()
+            NotificationFrame:Destroy()
+            local index = table.find(self.Notifications, NotificationFrame)
+            if index then
+                table.remove(self.Notifications, index)
+            end
+            
+            for i, frame in ipairs(self.Notifications) do
+                local tween = TweenService:Create(
+                    frame,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    {Position = UDim2.new(1, -310, 1, -70 - (i * 70))}
+                )
+                tween:Play()
+            end
+        end)
     end)
 end
 
 function Notifications:Destroy()
+    for _, frame in ipairs(self.Notifications) do
+        frame:Destroy()
+    end
+    self.Notifications = {}
     self.ScreenGui:Destroy()
 end
 
