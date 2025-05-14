@@ -12,10 +12,12 @@ function Notifications.new(screenGui)
     self.ScreenGui.ResetOnSpawn = false
     self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     self.Notifications = {}
+    self.IsUnhooking = false
     return self
 end
 
 function Notifications:ShowNotification(text, color)
+    if self.IsUnhooking then return end
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Size = UDim2.new(0, 300, 0, 60)
     NotificationFrame.Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))
@@ -76,7 +78,6 @@ function Notifications:ShowNotification(text, color)
             if index then
                 table.remove(self.Notifications, index)
             end
-            
             for i, frame in ipairs(self.Notifications) do
                 local tween = TweenService:Create(
                     frame,
@@ -90,6 +91,7 @@ function Notifications:ShowNotification(text, color)
 end
 
 function Notifications:Destroy()
+    self.IsUnhooking = true
     for _, frame in ipairs(self.Notifications) do
         frame:Destroy()
     end
