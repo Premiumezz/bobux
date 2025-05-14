@@ -1,111 +1,12 @@
 -- StarClient ClickGui Library
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-
--- Встроенный модуль уведомлений (notifications.lua)
-local Notifications = {}
-Notifications.__index = Notifications
-
-function Notifications.new(screenGui)
-    local self = setmetatable({}, Notifications)
-    self.ScreenGui = screenGui or Instance.new("ScreenGui")
-    self.ScreenGui.Name = "StarClientNotifications"
-    self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    self.ScreenGui.ResetOnSpawn = false
-    self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    self.Notifications = {}
-    return self
-end
-
-function Notifications:ShowNotification(text, color)
-    print("Showing notification: " .. tostring(text)) -- Отладочный вывод
-    local NotificationFrame = Instance.new("Frame")
-    NotificationFrame.Size = UDim2.new(0, 300, 0, 60)
-    NotificationFrame.Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))
-    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    NotificationFrame.BorderSizePixel = 0
-    NotificationFrame.ZIndex = 10
-    NotificationFrame.Parent = self.ScreenGui
-    NotificationFrame.ClipsDescendants = true
-
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
-    Corner.Parent = NotificationFrame
-
-    local Border = Instance.new("UIStroke")
-    Border.Color = color or Color3.fromRGB(255, 255, 255)
-    Border.Thickness = 2
-    Border.Parent = NotificationFrame
-
-    local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -20, 1, 0)
-    Title.Position = UDim2.new(0, 10, 0, 0)
-    Title.BackgroundTransparency = 1
-    Title.Text = text
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 20
-    Title.Font = Enum.Font.SourceSansBold
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextTransparency = 0
-    Title.ZIndex = 11
-    Title.Parent = NotificationFrame
-
-    local Shadow = Instance.new("UIStroke")
-    Shadow.Color = Color3.fromRGB(0, 0, 0)
-    Shadow.Thickness = 1
-    Shadow.Transparency = 0.5
-    Shadow.Parent = NotificationFrame
-
-    table.insert(self.Notifications, NotificationFrame)
-
-    local tweenIn = TweenService:Create(
-        NotificationFrame,
-        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {Position = UDim2.new(1, -310, 1, -70 - (#self.Notifications * 70))}
-    )
-    tweenIn:Play()
-
-    spawn(function()
-        wait(4)
-        local tweenOut = TweenService:Create(
-            NotificationFrame,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            {Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))}
-        )
-        tweenOut:Play()
-        tweenOut.Completed:Connect(function()
-            NotificationFrame:Destroy()
-            local index = table.find(self.Notifications, NotificationFrame)
-            if index then
-                table.remove(self.Notifications, index)
-            end
-            
-            for i, frame in ipairs(self.Notifications) do
-                local tween = TweenService:Create(
-                    frame,
-                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    {Position = UDim2.new(1, -310, 1, -70 - (i * 70))}
-                )
-                tween:Play()
-            end
-        end)
-    end)
-end
-
-function Notifications:Destroy()
-    for _, frame in ipairs(self.Notifications) do
-        frame:Destroy()
-    end
-    self.Notifications = {}
-    self.ScreenGui:Destroy()
-end
+local UserInputService = game:GetService("UserInputService")
 
 -- Main ClickGui Module
 local StarClientGui = {}
 StarClientGui.__index = StarClientGui
 
 function StarClientGui.new()
-    local UserInputService = game:GetService("UserInputService")
     local self = setmetatable({}, StarClientGui)
     
     self.ScreenGui = Instance.new("ScreenGui")
@@ -114,17 +15,10 @@ function StarClientGui.new()
     self.ScreenGui.Enabled = false
     self.ScreenGui.ResetOnSpawn = false
     
-    local NotificationGui = Instance.new("ScreenGui")
-    NotificationGui.Name = "StarClientNotifications"
-    NotificationGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    NotificationGui.ResetOnSpawn = false
-    
     self.ArrayListGui = Instance.new("ScreenGui")
     self.ArrayListGui.Name = "StarClientArrayList"
     self.ArrayListGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     self.ArrayListGui.ResetOnSpawn = false
-    
-    local notificationManager = Notifications.new(NotificationGui)
     
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 600, 0, 400)
@@ -190,12 +84,62 @@ function StarClientGui.new()
         end
     end)
     
+    self.ArrayListFrame = Instance.new("Frame")
+    self.ArrayListFrame.Size = UDim2.new(0, 150, 0, 0)
+    self.ArrayListFrame.Position = UDim2.new(0, 10, 0, 10)
+    self.ArrayListFrame.BackgroundTransparency = 1
+    self.ArrayListFrame.BorderSizePixel = 0
+    self.ArrayListFrame.Parent = self.ArrayListGui
+    self.ArrayListFrame.Name = "ArrayListFrame"
+
+    local ArrayListContainer = Instance.new("Frame")
+    ArrayListContainer.Size = UDim2.new(1, 0, 1, 0)
+    ArrayListContainer.BackgroundTransparency = 1
+    ArrayListContainer.Parent = self.ArrayListFrame
+    ArrayListContainer.Name = "ArrayListContainer"
+
+    local ArrayListLayout = Instance.new("UIListLayout")
+    ArrayListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ArrayListLayout.Padding = UDim.new(0, 5)
+    ArrayListLayout.Parent = ArrayListContainer
+
+    ArrayListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        self.ArrayListFrame.Size = UDim2.new(0, 150, 0, ArrayListLayout.AbsoluteContentSize.Y)
+    end)
+
+    local arrayDragging, arrayDragStart, arrayStartPos
+    self.ArrayListFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            arrayDragging = true
+            arrayDragStart = input.Position
+            arrayStartPos = self.ArrayListFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    arrayDragging = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if arrayDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - arrayDragStart
+            self.ArrayListFrame.Position = UDim2.new(
+                arrayStartPos.X.Scale,
+                arrayStartPos.X.Offset + delta.X,
+                arrayStartPos.Y.Scale,
+                arrayStartPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
     self.Tabs = {}
     self.TabButtons = {}
     self.CurrentTab = nil
     self.Functions = {}
-    self.Groups = {} -- Для хранения групп
-    
+    self.Groups = {}
+    self.EnabledFunctions = {}
+
     local tabNames = {"Combat", "Movement", "Visuals", "Exploits", "Utils"}
     for i, tabName in ipairs(tabNames) do
         local TabButton = Instance.new("TextButton")
@@ -231,14 +175,10 @@ function StarClientGui.new()
         UIPadding.PaddingRight = UDim.new(0, 10)
         UIPadding.Parent = TabFrame
         
-        local TopPadding = Instance.new("UIListLayout")
-        TopPadding.Padding = UDim.new(0, 10)
-        TopPadding.Parent = TabFrame
-        
         self.Tabs[tabName] = TabFrame
         self.TabButtons[tabName] = TabButton
         self.Functions[tabName] = {}
-        self.Groups[tabName] = {} -- Инициализация групп для каждой вкладки
+        self.Groups[tabName] = {}
         
         TabButton.MouseButton1Click:Connect(function()
             if self.CurrentTab ~= tabName then
@@ -264,10 +204,9 @@ function StarClientGui.new()
         end
     end)
     
-    return self, notificationManager
+    return self
 end
 
--- Новая функция для создания группы
 function StarClientGui:AddGroup(tabName, groupName)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
@@ -275,7 +214,7 @@ function StarClientGui:AddGroup(tabName, groupName)
     local firstFunction = #self.Functions[tabName] == 0
     local GroupFrame = Instance.new("Frame")
     GroupFrame.Name = groupName .. "Group"
-    GroupFrame.Size = UDim2.new(0.8, 0, 0, 50) -- Начальная высота, будет обновляться
+    GroupFrame.Size = UDim2.new(0.8, 0, 0, 50)
     GroupFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
     GroupFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     GroupFrame.BorderSizePixel = 1
@@ -297,7 +236,6 @@ function StarClientGui:AddGroup(tabName, groupName)
     GroupUIListLayout.Padding = UDim.new(0, 5)
     GroupUIListLayout.Parent = GroupContainer
     
-    -- Обновление высоты группы при добавлении элементов
     GroupUIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         GroupFrame.Size = UDim2.new(0.8, 0, 0, GroupUIListLayout.AbsoluteContentSize.Y + 10)
         TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
@@ -311,7 +249,7 @@ function StarClientGui:AddGroup(tabName, groupName)
     return GroupContainer
 end
 
-function StarClientGui:AddFunction(tabName, funcName, callback, groupName)
+function StarClientGui:AddFunction(tabName, funcName, callback, groupName, isSubFunction)
     local parentFrame
     if groupName then
         parentFrame = self.Groups[tabName][groupName]
@@ -326,19 +264,19 @@ function StarClientGui:AddFunction(tabName, funcName, callback, groupName)
     local FuncFrame = Instance.new("Frame")
     FuncFrame.Name = funcName .. "Frame"
     FuncFrame.Size = UDim2.new(1, 0, 0, 50)
-    FuncFrame.BackgroundTransparency = 1 -- Без фона внутри группы
+    FuncFrame.BackgroundTransparency = 1
     FuncFrame.Parent = parentFrame
     
-    local FuncName = Instance.new("TextLabel")
-    FuncName.Size = UDim2.new(0.4, 0, 0, 20)
-    FuncName.Position = UDim2.new(0, 10, 0, 5)
-    FuncName.BackgroundTransparency = 1
-    FuncName.Text = funcName
-    FuncName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FuncName.TextSize = 14
-    FuncName.Font = Enum.Font.SourceSans
-    FuncName.TextXAlignment = Enum.TextXAlignment.Left
-    FuncName.Parent = FuncFrame
+    local FuncNameLabel = Instance.new("TextLabel")
+    FuncNameLabel.Size = UDim2.new(0.4, 0, 0, 20)
+    FuncNameLabel.Position = UDim2.new(0, 10, 0, 5)
+    FuncNameLabel.BackgroundTransparency = 1
+    FuncNameLabel.Text = funcName
+    FuncNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FuncNameLabel.TextSize = 14
+    FuncNameLabel.Font = Enum.Font.SourceSans
+    FuncNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    FuncNameLabel.Parent = FuncFrame
     
     local BindLabel = Instance.new("TextLabel")
     BindLabel.Size = UDim2.new(0.2, 0, 0, 20)
@@ -392,6 +330,59 @@ function StarClientGui:AddFunction(tabName, funcName, callback, groupName)
     
     local enabled = false
     local bindKey = nil
+
+    local function updateArrayList()
+        for _, child in ipairs(self.ArrayListFrame.ArrayListContainer:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
+            end
+        end
+
+        local sortedFunctions = {}
+        for name, _ in pairs(self.EnabledFunctions) do
+            table.insert(sortedFunctions, name)
+        end
+        table.sort(sortedFunctions, function(a, b)
+            return #a > #b
+        end)
+
+        for i, name in ipairs(sortedFunctions) do
+            local LabelFrame = Instance.new("Frame")
+            LabelFrame.Size = UDim2.new(0, 140, 0, 24)
+            LabelFrame.BackgroundTransparency = 0
+            LabelFrame.Parent = self.ArrayListFrame.ArrayListContainer
+
+            local LabelGradient = Instance.new("UIGradient")
+            LabelGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+            })
+            LabelGradient.Parent = LabelFrame
+
+            local LabelCorner = Instance.new("UICorner")
+            LabelCorner.CornerRadius = UDim.new(0, 6)
+            LabelCorner.Parent = LabelFrame
+
+            local LabelStroke = Instance.new("UIStroke")
+            LabelStroke.Color = Color3.fromRGB(255, 255, 255)
+            LabelStroke.Thickness = 1
+            LabelStroke.Transparency = 0.3
+            LabelStroke.Parent = LabelFrame
+
+            local ArrayLabel = Instance.new("TextLabel")
+            ArrayLabel.Size = UDim2.new(1, 0, 1, 0)
+            ArrayLabel.BackgroundTransparency = 1
+            ArrayLabel.Text = name
+            ArrayLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ArrayLabel.TextSize = 14
+            ArrayLabel.Font = Enum.Font.SourceSansBold
+            ArrayLabel.TextXAlignment = Enum.TextXAlignment.Center
+            ArrayLabel.TextStrokeTransparency = 0.5
+            ArrayLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            ArrayLabel.Parent = LabelFrame
+        end
+    end
+
     Toggle.MouseButton1Click:Connect(function()
         enabled = not enabled
         Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
@@ -399,17 +390,19 @@ function StarClientGui:AddFunction(tabName, funcName, callback, groupName)
         FuncFrame.Size = enabled and UDim2.new(1, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(1, 0, 0, 50)
         if callback then
             callback(enabled)
-            notificationManager:ShowNotification(
-                funcName .. " " .. (enabled and "Enabled" or "Disabled"),
-                enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-            )
         end
+        if enabled then
+            self.EnabledFunctions[funcName] = true
+        else
+            self.EnabledFunctions[funcName] = nil
+        end
+        updateArrayList()
     end)
-    
+
     BindButton.MouseButton1Click:Connect(function()
         BindButton.Text = "..."
         local connection
-        connection = game:GetService("UserInputService").InputBegan:Connect(function(input)
+        connection = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 bindKey = input.KeyCode
                 BindButton.Text = bindKey.Name
@@ -423,8 +416,8 @@ function StarClientGui:AddFunction(tabName, funcName, callback, groupName)
             connection:Disconnect()
         end
     end)
-    
-    game:GetService("UserInputService").InputBegan:Connect(function(input)
+
+    UserInputService.InputBegan:Connect(function(input)
         if bindKey and input.KeyCode == bindKey then
             enabled = not enabled
             Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
@@ -432,24 +425,26 @@ function StarClientGui:AddFunction(tabName, funcName, callback, groupName)
             FuncFrame.Size = enabled and UDim2.new(1, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(1, 0, 0, 50)
             if callback then
                 callback(enabled)
-                notificationManager:ShowNotification(
-                    funcName .. " " .. (enabled and "Enabled" or "Disabled"),
-                    enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-                )
             end
+            if enabled then
+                self.EnabledFunctions[funcName] = true
+            else
+                self.EnabledFunctions[funcName] = nil
+            end
+            updateArrayList()
         elseif input.KeyCode == Enum.KeyCode.Delete and BindButton then
             bindKey = nil
             BindButton.Text = "None"
         end
     end)
-    
+
     if not groupName then
         table.insert(self.Functions[tabName], funcName)
     end
     return {Toggle = Toggle, BindButton = BindButton}
 end
 
-function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback, groupName)
+function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback, groupName, isSubFunction)
     local parentFrame
     if groupName then
         parentFrame = self.Groups[tabName][groupName]
@@ -469,7 +464,7 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback,
     
     local SliderName = Instance.new("TextLabel")
     SliderName.Size = UDim2.new(0.7, 0, 0, 20)
-    SliderName.Position = UDim2.new(0, 10, 0, 5)
+    SliderName.Position = UDim2.new(0, isSubFunction and 20 or 10, 0, 5)
     SliderName.BackgroundTransparency = 1
     SliderName.Text = funcName
     SliderName.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -520,19 +515,20 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback,
     KnobCorner.Parent = Knob
     
     local dragging = false
+    PERFORMANCE("Slider drag handler setup")
     Knob.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
         end
     end)
     
-    game:GetService("UserInputService").InputEnded:Connect(function(input)
+    UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
     
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mouseX = input.Position.X
             local barX = SliderBar.AbsolutePosition.X
@@ -554,7 +550,7 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback,
     end
 end
 
-function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback, groupName)
+function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback, groupName, isSubFunction)
     local parentFrame
     if groupName then
         parentFrame = self.Groups[tabName][groupName]
@@ -574,7 +570,7 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback, g
     
     local RGBName = Instance.new("TextLabel")
     RGBName.Size = UDim2.new(1, -20, 0, 20)
-    RGBName.Position = UDim2.new(0, 10, 0, 5)
+    RGBName.Position = UDim2.new(0, isSubFunction and 20 or 10, 0, 5)
     RGBName.BackgroundTransparency = 1
     RGBName.Text = funcName
     RGBName.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -604,7 +600,7 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback, g
     for i, slider in ipairs(sliders) do
         local SliderName = Instance.new("TextLabel")
         SliderName.Size = UDim2.new(0.3, 0, 0, 20)
-        SliderName.Position = UDim2.new(0, 10, 0, 30 + (i - 1) * 25)
+        SliderName.Position = UDim2.new(0, isSubFunction and 30 or 20, 0, 30 + (i - 1) * 25)
         SliderName.BackgroundTransparency = 1
         SliderName.Text = slider.name
         SliderName.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -661,13 +657,13 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback, g
             end
         end)
         
-        game:GetService("UserInputService").InputEnded:Connect(function(input)
+        UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = false
             end
         end)
         
-        game:GetService("UserInputService").InputChanged:Connect(function(input)
+        UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 local mouseX = input.Position.X
                 local barX = SliderBar.AbsolutePosition.X
@@ -692,7 +688,7 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback, g
     end
 end
 
-function StarClientGui:AddMultiOption(tabName, funcName, options, callback, groupName)
+function StarClientGui:AddMultiOption(tabName, funcName, options, callback, groupName, isSubFunction)
     local parentFrame
     if groupName then
         parentFrame = self.Groups[tabName][groupName]
@@ -712,7 +708,7 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback, grou
     
     local MultiName = Instance.new("TextLabel")
     MultiName.Size = UDim2.new(1, -20, 0, 20)
-    MultiName.Position = UDim2.new(0, 10, 0, 5)
+    MultiName.Position = UDim2.new(0, isSubFunction and 20 or 10, 0, 5)
     MultiName.BackgroundTransparency = 1
     MultiName.Text = funcName
     MultiName.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -769,11 +765,6 @@ end
 function StarClientGui:Destroy()
     self.ScreenGui:Destroy()
     self.ArrayListGui:Destroy()
-    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    local notificationGui = playerGui:FindFirstChild("StarClientNotifications")
-    if notificationGui then
-        notificationGui:Destroy()
-    end
 end
 
 return StarClientGui
