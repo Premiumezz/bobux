@@ -18,6 +18,7 @@ function Notifications.new(screenGui)
 end
 
 function Notifications:ShowNotification(text, color)
+    print("Showing notification: " .. tostring(text)) -- Отладочный вывод
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Size = UDim2.new(0, 300, 0, 60)
     NotificationFrame.Position = UDim2.new(1, 0, 1, -70 - (#self.Notifications * 70))
@@ -103,34 +104,28 @@ end
 local StarClientGui = {}
 StarClientGui.__index = StarClientGui
 
--- Create new ClickGui instance
 function StarClientGui.new()
     local UserInputService = game:GetService("UserInputService")
     local self = setmetatable({}, StarClientGui)
     
-    -- ScreenGui Setup for ClickGui
     self.ScreenGui = Instance.new("ScreenGui")
     self.ScreenGui.Name = "StarClientGui"
     self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     self.ScreenGui.Enabled = false
     self.ScreenGui.ResetOnSpawn = false
     
-    -- Separate ScreenGui for Notifications
     local NotificationGui = Instance.new("ScreenGui")
     NotificationGui.Name = "StarClientNotifications"
     NotificationGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     NotificationGui.ResetOnSpawn = false
     
-    -- Separate ScreenGui for ArrayList
     self.ArrayListGui = Instance.new("ScreenGui")
     self.ArrayListGui.Name = "StarClientArrayList"
     self.ArrayListGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     self.ArrayListGui.ResetOnSpawn = false
     
-    -- Инициализация notificationManager
     local notificationManager = Notifications.new(NotificationGui)
     
-    -- Main Frame (Dark Gray with Rounded Corners)
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 600, 0, 400)
     self.MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
@@ -143,7 +138,6 @@ function StarClientGui.new()
     MainCorner.CornerRadius = UDim.new(0, 8)
     MainCorner.Parent = self.MainFrame
     
-    -- Sidebar (Darker Rectangle, Rounded Left Corners Only)
     self.Sidebar = Instance.new("Frame")
     self.Sidebar.Size = UDim2.new(0, 150, 1, 0)
     self.Sidebar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -154,7 +148,6 @@ function StarClientGui.new()
     SidebarCorner.CornerRadius = UDim.new(0, 8)
     SidebarCorner.Parent = self.Sidebar
     
-    -- Apply left-only rounded corners by masking right side
     local SidebarMask = Instance.new("Frame")
     SidebarMask.Size = UDim2.new(0, 5, 1, 0)
     SidebarMask.Position = UDim2.new(1, -5, 0, 0)
@@ -162,7 +155,6 @@ function StarClientGui.new()
     SidebarMask.BorderSizePixel = 0
     SidebarMask.Parent = self.Sidebar
     
-    -- Title (StarClient)
     self.Title = Instance.new("TextLabel")
     self.Title.Size = UDim2.new(1, 0, 0, 30)
     self.Title.BackgroundTransparency = 1
@@ -172,7 +164,6 @@ function StarClientGui.new()
     self.Title.Font = Enum.Font.SourceSansBold
     self.Title.Parent = self.Sidebar
     
-    -- Dragging Functionality
     local dragging, dragStart, startPos
     self.Title.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -199,11 +190,11 @@ function StarClientGui.new()
         end
     end)
     
-    -- Tabs
     self.Tabs = {}
     self.TabButtons = {}
     self.CurrentTab = nil
     self.Functions = {}
+    self.Groups = {} -- Для хранения групп
     
     local tabNames = {"Combat", "Movement", "Visuals", "Exploits", "Utils"}
     for i, tabName in ipairs(tabNames) do
@@ -247,6 +238,7 @@ function StarClientGui.new()
         self.Tabs[tabName] = TabFrame
         self.TabButtons[tabName] = TabButton
         self.Functions[tabName] = {}
+        self.Groups[tabName] = {} -- Инициализация групп для каждой вкладки
         
         TabButton.MouseButton1Click:Connect(function()
             if self.CurrentTab ~= tabName then
@@ -275,23 +267,67 @@ function StarClientGui.new()
     return self, notificationManager
 end
 
-function StarClientGui:AddFunction(tabName, funcName, callback)
+-- Новая функция для создания группы
+function StarClientGui:AddGroup(tabName, groupName)
     local TabFrame = self.Tabs[tabName]
     if not TabFrame then return end
     
     local firstFunction = #self.Functions[tabName] == 0
+    local GroupFrame = Instance.new("Frame")
+    GroupFrame.Name = groupName .. "Group"
+    GroupFrame.Size = UDim2.new(0.8, 0, 0, 50) -- Начальная высота, будет обновляться
+    GroupFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
+    GroupFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    GroupFrame.BorderSizePixel = 1
+    GroupFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
+    GroupFrame.Parent = TabFrame
+    
+    local GroupCorner = Instance.new("UICorner")
+    GroupCorner.CornerRadius = UDim.new(0, 4)
+    GroupCorner.Parent = GroupFrame
+    
+    local GroupContainer = Instance.new("Frame")
+    GroupContainer.Size = UDim2.new(1, -10, 0, 0)
+    GroupContainer.Position = UDim2.new(0, 5, 0, 5)
+    GroupContainer.BackgroundTransparency = 1
+    GroupContainer.Parent = GroupFrame
+    
+    local GroupUIListLayout = Instance.new("UIListLayout")
+    GroupUIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    GroupUIListLayout.Padding = UDim.new(0, 5)
+    GroupUIListLayout.Parent = GroupContainer
+    
+    -- Обновление высоты группы при добавлении элементов
+    GroupUIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        GroupFrame.Size = UDim2.new(0.8, 0, 0, GroupUIListLayout.AbsoluteContentSize.Y + 10)
+        TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+    end)
+    
+    if not self.Groups[tabName][groupName] then
+        self.Groups[tabName][groupName] = GroupContainer
+    end
+    
+    table.insert(self.Functions[tabName], groupName)
+    return GroupContainer
+end
+
+function StarClientGui:AddFunction(tabName, funcName, callback, groupName)
+    local parentFrame
+    if groupName then
+        parentFrame = self.Groups[tabName][groupName]
+        if not parentFrame then
+            parentFrame = self:AddGroup(tabName, groupName)
+        end
+    else
+        parentFrame = self.Tabs[tabName]
+        if not parentFrame then return end
+    end
+    
     local FuncFrame = Instance.new("Frame")
     FuncFrame.Name = funcName .. "Frame"
-    FuncFrame.Size = UDim2.new(0.8, 0, 0, 50)
-    FuncFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
-    FuncFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    FuncFrame.BorderSizePixel = 1
-    FuncFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    FuncFrame.Parent = TabFrame
-    
-    local FuncCorner = Instance.new("UICorner")
-    FuncCorner.CornerRadius = UDim.new(0, 4)
-    FuncCorner.Parent = FuncFrame
+    FuncFrame.Size = UDim2.new(1, 0, 0, 50)
+    FuncFrame.BackgroundTransparency = 1 -- Без фона внутри группы
+    FuncFrame.Parent = parentFrame
     
     local FuncName = Instance.new("TextLabel")
     FuncName.Size = UDim2.new(0.4, 0, 0, 20)
@@ -360,8 +396,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         enabled = not enabled
         Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
         SubContainer.Visible = enabled
-        FuncFrame.Size = enabled and UDim2.new(0.8, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(0.8, 0, 0, 50)
-        TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+        FuncFrame.Size = enabled and UDim2.new(1, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(1, 0, 0, 50)
         if callback then
             callback(enabled)
             notificationManager:ShowNotification(
@@ -394,8 +429,7 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
             enabled = not enabled
             Toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(100, 100, 100)
             SubContainer.Visible = enabled
-            FuncFrame.Size = enabled and UDim2.new(0.8, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(0.8, 0, 0, 50)
-            TabFrame.CanvasSize = UDim2.new(0, 0, 0, TabFrame.UIListLayout.AbsoluteContentSize.Y + 10)
+            FuncFrame.Size = enabled and UDim2.new(1, 0, 0, 30 + SubContainer.UIListLayout.AbsoluteContentSize.Y + 10) or UDim2.new(1, 0, 0, 50)
             if callback then
                 callback(enabled)
                 notificationManager:ShowNotification(
@@ -409,27 +443,29 @@ function StarClientGui:AddFunction(tabName, funcName, callback)
         end
     end)
     
-    table.insert(self.Functions[tabName], funcName)
+    if not groupName then
+        table.insert(self.Functions[tabName], funcName)
+    end
     return {Toggle = Toggle, BindButton = BindButton}
 end
 
-function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
+function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback, groupName)
+    local parentFrame
+    if groupName then
+        parentFrame = self.Groups[tabName][groupName]
+        if not parentFrame then
+            parentFrame = self:AddGroup(tabName, groupName)
+        end
+    else
+        parentFrame = self.Tabs[tabName]
+        if not parentFrame then return end
+    end
     
-    local firstFunction = #self.Functions[tabName] == 0
     local SliderFrame = Instance.new("Frame")
     SliderFrame.Name = funcName .. "Frame"
-    SliderFrame.Size = UDim2.new(0.8, 0, 0, 50)
-    SliderFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
-    SliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    SliderFrame.BorderSizePixel = 1
-    SliderFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    SliderFrame.Parent = TabFrame
-    
-    local SliderCorner = Instance.new("UICorner")
-    SliderCorner.CornerRadius = UDim.new(0, 4)
-    SliderCorner.Parent = SliderFrame
+    SliderFrame.Size = UDim2.new(1, 0, 0, 50)
+    SliderFrame.BackgroundTransparency = 1
+    SliderFrame.Parent = parentFrame
     
     local SliderName = Instance.new("TextLabel")
     SliderName.Size = UDim2.new(0.7, 0, 0, 20)
@@ -512,25 +548,29 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback)
             end
         end
     end)
+    
+    if not groupName then
+        table.insert(self.Functions[tabName], funcName)
+    end
 end
 
-function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
+function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback, groupName)
+    local parentFrame
+    if groupName then
+        parentFrame = self.Groups[tabName][groupName]
+        if not parentFrame then
+            parentFrame = self:AddGroup(tabName, groupName)
+        end
+    else
+        parentFrame = self.Tabs[tabName]
+        if not parentFrame then return end
+    end
     
-    local firstFunction = #self.Functions[tabName] == 0
     local RGBFrame = Instance.new("Frame")
     RGBFrame.Name = funcName .. "Frame"
-    RGBFrame.Size = UDim2.new(0.8, 0, 0, 110)
-    RGBFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
-    RGBFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    RGBFrame.BorderSizePixel = 1
-    RGBFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    RGBFrame.Parent = TabFrame
-    
-    local RGBCorner = Instance.new("UICorner")
-    RGBCorner.CornerRadius = UDim.new(0, 4)
-    RGBCorner.Parent = RGBFrame
+    RGBFrame.Size = UDim2.new(1, 0, 0, 110)
+    RGBFrame.BackgroundTransparency = 1
+    RGBFrame.Parent = parentFrame
     
     local RGBName = Instance.new("TextLabel")
     RGBName.Size = UDim2.new(1, -20, 0, 20)
@@ -646,25 +686,29 @@ function StarClientGui:AddRGBPicker(tabName, funcName, defaultColor, callback)
             end
         end)
     end
+    
+    if not groupName then
+        table.insert(self.Functions[tabName], funcName)
+    end
 end
 
-function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
-    local TabFrame = self.Tabs[tabName]
-    if not TabFrame then return end
+function StarClientGui:AddMultiOption(tabName, funcName, options, callback, groupName)
+    local parentFrame
+    if groupName then
+        parentFrame = self.Groups[tabName][groupName]
+        if not parentFrame then
+            parentFrame = self:AddGroup(tabName, groupName)
+        end
+    else
+        parentFrame = self.Tabs[tabName]
+        if not parentFrame then return end
+    end
     
-    local firstFunction = #self.Functions[tabName] == 0
     local MultiFrame = Instance.new("Frame")
     MultiFrame.Name = funcName .. "Frame"
-    MultiFrame.Size = UDim2.new(0.8, 0, 0, 50 + (#options - 1) * 25)
-    MultiFrame.Position = UDim2.new(0, 0, 0, firstFunction and 10 or 0)
-    MultiFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    MultiFrame.BorderSizePixel = 1
-    MultiFrame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-    MultiFrame.Parent = TabFrame
-    
-    local MultiCorner = Instance.new("UICorner")
-    MultiCorner.CornerRadius = UDim.new(0, 4)
-    MultiCorner.Parent = MultiFrame
+    MultiFrame.Size = UDim2.new(1, 0, 0, 50 + (#options - 1) * 25)
+    MultiFrame.BackgroundTransparency = 1
+    MultiFrame.Parent = parentFrame
     
     local MultiName = Instance.new("TextLabel")
     MultiName.Size = UDim2.new(1, -20, 0, 20)
@@ -715,6 +759,10 @@ function StarClientGui:AddMultiOption(tabName, funcName, options, callback)
                 callback(selectedOptions)
             end
         end)
+    end
+    
+    if not groupName then
+        table.insert(self.Functions[tabName], funcName)
     end
 end
 
