@@ -515,7 +515,6 @@ function StarClientGui:AddSlider(tabName, funcName, min, max, default, callback,
     KnobCorner.Parent = Knob
     
     local dragging = false
-    PERFORMANCE("Slider drag handler setup")
     Knob.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
